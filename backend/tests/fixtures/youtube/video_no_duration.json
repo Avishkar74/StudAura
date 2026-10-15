@@ -1,0 +1,42 @@
+{
+  "kind": "youtube#videoListResponse",
+  "items": [
+    {
+      "kind": "youtube#video",
+      "id": "noDuration1",
+      "snippet": {
+        "title": "Live Stream Replay",
+        "channelTitle": "Example Academy",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/noDuration1/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/noDuration1/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/noDuration1/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "P0D"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    }
+  ],
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 1
+  }
+}
