@@ -54,6 +54,28 @@ export interface PlaylistImportPage {
   items: PlaylistImportItem[]
 }
 
+export type LearningStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'NEEDS_REVISION'
+
+/** The caller's own progress on a video. Position and status are separate fields. */
+export interface ProgressFields {
+  learning_status: LearningStatus
+  last_position_seconds: number
+  playback_pct: number | null
+  ever_completed_at: string | null
+  last_watched_at: string | null
+}
+
+/** One row of a path's ordered video list. */
+export interface PathVideo extends ProgressFields {
+  position: number
+  video: VideoMeta
+}
+
+/** A single video with the caller's progress (GET /videos/{id}). */
+export interface VideoDetail extends ProgressFields {
+  video: VideoMeta
+}
+
 export interface VideoImportResult {
   status: 'added' | 'skipped'
   reason: string | null

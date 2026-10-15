@@ -18,6 +18,16 @@ beforeEach(() => {
     'GET /api/v1/learning-paths': {
       body: { total: PATHS.length, limit: 100, offset: 0, items: PATHS },
     },
+    // Opening a path from the sidebar loads its page too.
+    ...Object.fromEntries(
+      PATHS.flatMap((p) => [
+        [`GET /api/v1/learning-paths/${p.id}`, { body: p }],
+        [
+          `GET /api/v1/learning-paths/${p.id}/videos`,
+          { body: { total: 0, limit: 500, offset: 0, items: [] } },
+        ],
+      ]),
+    ),
   })
 })
 

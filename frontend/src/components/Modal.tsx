@@ -19,7 +19,8 @@ export function Modal({ title, description, onClose, children }: ModalProps) {
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null
-    const first = panel.current?.querySelector<HTMLElement>('input, select, textarea') ??
+    const first =
+      panel.current?.querySelector<HTMLElement>('input, select, textarea') ??
       panel.current?.querySelector<HTMLElement>(FOCUSABLE)
     first?.focus()
     return () => opener?.focus?.()

@@ -4,6 +4,8 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { RedirectIfAuthed, RequireAuth } from '@/features/auth/RequireAuth'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { HomePage } from '@/features/dashboard/HomePage'
+import { PathPage } from '@/features/learning-paths/PathPage'
+import { PathWorkspacePage, SavedWorkspacePage } from '@/features/player/WorkspacePages'
 import { AppShell } from './AppShell'
 import { PlaceholderPage } from './PlaceholderPage'
 
@@ -41,33 +43,9 @@ export function App() {
               />
             }
           />
-          <Route
-            path="/learning-paths/:pathId"
-            element={
-              <PlaceholderPage
-                title="Learning Path"
-                description="Videos, progress and status for this path."
-              />
-            }
-          />
-          <Route
-            path="/learn/:pathId/:videoId"
-            element={
-              <PlaceholderPage
-                title="Learning Workspace"
-                description="Watch, take notes and track progress."
-              />
-            }
-          />
-          <Route
-            path="/learn/saved/:videoId"
-            element={
-              <PlaceholderPage
-                title="Learning Workspace"
-                description="Watch a saved video with notes and progress."
-              />
-            }
-          />
+          <Route path="/learning-paths/:pathId" element={<PathPage />} />
+          <Route path="/learn/:pathId/:videoId" element={<PathWorkspacePage />} />
+          <Route path="/learn/saved/:videoId" element={<SavedWorkspacePage />} />
           <Route
             path="/goals"
             element={
@@ -89,13 +67,19 @@ export function App() {
           <Route
             path="/notes"
             element={
-              <PlaceholderPage title="My Notes" description="Every note you've written, in one place." />
+              <PlaceholderPage
+                title="My Notes"
+                description="Every note you've written, in one place."
+              />
             }
           />
           <Route
             path="/library"
             element={
-              <PlaceholderPage title="Saved Videos" description="Videos you bookmarked to return to." />
+              <PlaceholderPage
+                title="Saved Videos"
+                description="Videos you bookmarked to return to."
+              />
             }
           />
           <Route

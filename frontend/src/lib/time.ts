@@ -25,3 +25,13 @@ export function greetingFor(date: Date = new Date()): string {
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
 }
+
+/** 125 -> "2:05", 3725 -> "1:02:05". For video timestamps and durations. */
+export function formatTimestamp(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`
+}

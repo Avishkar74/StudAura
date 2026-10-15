@@ -52,8 +52,20 @@ describe('dashboard', () => {
       ...ME,
       'GET /api/v1/learning-paths': pathsReply([
         makePath({ id: 'a', title: 'Algorithms', total_videos: 10, completed_videos: 4 }),
-        makePath({ id: 'b', title: 'Networks', total_videos: 5, completed_videos: 5, completion_pct: 100 }),
-        makePath({ id: 'c', title: 'Empty one', total_videos: 0, completed_videos: 0, completion_pct: 0 }),
+        makePath({
+          id: 'b',
+          title: 'Networks',
+          total_videos: 5,
+          completed_videos: 5,
+          completion_pct: 100,
+        }),
+        makePath({
+          id: 'c',
+          title: 'Empty one',
+          total_videos: 0,
+          completed_videos: 0,
+          completion_pct: 0,
+        }),
       ]),
     })
     renderApp()
@@ -63,7 +75,9 @@ describe('dashboard', () => {
     expect(summary.getByText('Active Learning Paths').parentElement).toHaveTextContent('2')
     expect(summary.getByText('Active Learning Paths').parentElement).toHaveTextContent('3 in total')
     expect(summary.getByText('Videos Completed').parentElement).toHaveTextContent('9')
-    expect(summary.getByText('Videos Completed').parentElement).toHaveTextContent('out of 15 videos')
+    expect(summary.getByText('Videos Completed').parentElement).toHaveTextContent(
+      'out of 15 videos',
+    )
     // Tracking does not exist yet, so these say so instead of showing 0.
     expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('—')
     expect(summary.getByText('Needs Revision').parentElement).toHaveTextContent('Not tracked yet')
@@ -81,7 +95,13 @@ describe('dashboard', () => {
           completion_pct: 40,
           last_activity_at: new Date(Date.now() - 2 * 3600e3).toISOString(),
         }),
-        makePath({ id: 'b', title: 'Fresh', completed_videos: 0, in_progress_videos: 0, completion_pct: 0 }),
+        makePath({
+          id: 'b',
+          title: 'Fresh',
+          completed_videos: 0,
+          in_progress_videos: 0,
+          completion_pct: 0,
+        }),
       ]),
     })
     renderApp()
@@ -106,7 +126,9 @@ describe('dashboard', () => {
     mockApi({
       ...ME,
       'GET /api/v1/learning-paths': () =>
-        ++attempts === 1 ? { status: 500, body: {} } : pathsReply([makePath({ title: 'Back again' })]),
+        ++attempts === 1
+          ? { status: 500, body: {} }
+          : pathsReply([makePath({ title: 'Back again' })]),
     })
     renderApp()
 

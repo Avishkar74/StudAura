@@ -46,8 +46,8 @@ export function SignupPage() {
       >
         <p role="status" className="text-sm text-text-secondary">
           We sent a confirmation link to{' '}
-          <strong className="text-text-primary">{confirmEmail}</strong>. Open it, then sign in. If it
-          doesn&apos;t arrive in a few minutes, check your spam folder.
+          <strong className="text-text-primary">{confirmEmail}</strong>. Open it, then sign in. If
+          it doesn&apos;t arrive in a few minutes, check your spam folder.
         </p>
       </AuthCard>
     )

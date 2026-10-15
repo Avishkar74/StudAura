@@ -19,7 +19,15 @@ function plural(n: number, one: string, many: string) {
   return `${n} ${n === 1 ? one : many}`
 }
 
-function Summary({ state, pathId, onClose }: { state: ImportState; pathId: string; onClose: () => void }) {
+function Summary({
+  state,
+  pathId,
+  onClose,
+}: {
+  state: ImportState
+  pathId: string
+  onClose: () => void
+}) {
   const failed = state.failedItems.length
   return (
     <div role="status" className="flex flex-col gap-2 text-sm">
@@ -29,9 +37,7 @@ function Summary({ state, pathId, onClose }: { state: ImportState; pathId: strin
           : `Imported ${plural(state.added, 'video', 'videos')} so far.`}
       </p>
       {failed > 0 && (
-        <p className="text-text-secondary">
-          {plural(failed, 'item', 'items')} could not be added.
-        </p>
+        <p className="text-text-secondary">{plural(failed, 'item', 'items')} could not be added.</p>
       )}
       {state.skipped > 0 && (
         <p className="text-text-secondary">
@@ -138,7 +144,9 @@ export function PlaylistImportModal({
 
           {state.error && <FormError message={state.error} />}
           {state.phase === 'stopped' && (
-            <p className="text-sm text-text-secondary">Stopped. You can continue where you left off.</p>
+            <p className="text-sm text-text-secondary">
+              Stopped. You can continue where you left off.
+            </p>
           )}
 
           <div className="flex justify-end gap-2">
@@ -173,7 +181,12 @@ export function PlaylistImportModal({
               if (state.phase === 'failed') reset()
             }}
           />
-          <PathPicker id="import-playlist-path" paths={items} value={selected} onChange={setPathId} />
+          <PathPicker
+            id="import-playlist-path"
+            paths={items}
+            value={selected}
+            onChange={setPathId}
+          />
           <FormError message={state.phase === 'failed' ? state.error : null} />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={close}>

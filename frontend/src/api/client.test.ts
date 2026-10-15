@@ -79,7 +79,11 @@ describe('apiFetch', () => {
     const fetchMock = vi.fn().mockResolvedValue(response(401))
     vi.stubGlobal('fetch', fetchMock)
     const onUnauthorized = vi.fn()
-    configureApiAuth({ getToken: async () => 'old', refreshToken: async () => null, onUnauthorized })
+    configureApiAuth({
+      getToken: async () => 'old',
+      refreshToken: async () => null,
+      onUnauthorized,
+    })
 
     await expect(apiFetch('/x')).rejects.toBeInstanceOf(ApiError)
     expect(fetchMock).toHaveBeenCalledTimes(1)
