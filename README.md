@@ -1,5 +1,7 @@
 # StudAura
 
+[![CI](https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml/badge.svg)](https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml)
+
 A dark-only, YouTube-inspired personal learning workspace. Organise YouTube videos and playlists
 into learning paths, watch them embedded, take notes, track progress, set daily goals and manage a
 revision queue. **Watch. Capture. Track. Revise.**
@@ -52,6 +54,12 @@ docker compose down -v                                # stop and wipe the local 
 cd frontend && npm install
 npm run dev | test | lint | typecheck | build
 ```
+
+## CI/CD
+
+GitHub Actions runs lint, type checks and tests on every pull request, builds and smoke-tests
+both images, and on `main` scans them with Trivy and publishes them to GHCR. See
+[`docs/CICD.md`](docs/CICD.md) for the pipeline, the Trivy policy and the one-time repository setup.
 
 ## Environment variables
 

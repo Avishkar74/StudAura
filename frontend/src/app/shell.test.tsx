@@ -94,7 +94,8 @@ describe('layout and landmarks', () => {
 
   it('sets a document title per page', async () => {
     await renderShell('/goals')
-    expect(document.title).toBe('Daily Goals · StudAura')
+    // The title is set in an effect after the page renders, so wait for it rather than race it.
+    await waitFor(() => expect(document.title).toBe('Daily Goals · StudAura'))
   })
 })
 
