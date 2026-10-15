@@ -1,13 +1,20 @@
 """Daily goals and viewing sessions. Every function filters by `user_id` (CLAUDE.md rule 1)."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import Date, and_, cast, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import LearningGoal, ViewingSession
+from app.models import (
+    LearningGoal,
+    LearningPath,
+    LearningPathVideo,
+    Video,
+    VideoProgress,
+    ViewingSession,
+)
 
 
 async def get_goal(db: AsyncSession, user_id: uuid.UUID) -> LearningGoal | None:
@@ -90,3 +97,59 @@ async def record_session(
         where=ViewingSession.user_id == user_id,
     ).returning(ViewingSession.watched_seconds)
     return int((await db.execute(stmt)).scalar_one())
+
+
+async def daily_totals(
+    db: AsyncSession, user_id: uuid.UUID, tz_name: str, start: datetime, end: datetime
+) -> dict[date, int]:
+    """Watched seconds per local day (in `tz_name`) for sessions started in [start, end)."""
+    local_day = cast(func.timezone(tz_name, ViewingSession.started_at), Date)
+    rows = await db.execute(
+        select(local_day, func.sum(ViewingSession.watched_seconds))
+        .where(
+            ViewingSession.user_id == user_id,
+            ViewingSession.started_at >= start,
+            ViewingSession.started_at < end,
+        )
+        .group_by(local_day)
+    )
+    return {day: int(total) for day, total in rows}
+
+
+async def path_deadlines(
+    db: AsyncSession, user_id: uuid.UUID
+) -> list[tuple[uuid.UUID, str, date, int, int, int]]:
+    """For each of the user's paths with a target date: id, title, date, and what is left.
+
+    "Left" is every video the student has never completed, so a rewatch or a flag for revision
+    does not add work. Returns (path id, title, target date, remaining videos, remaining known
+    seconds, remaining videos of unknown length).
+    """
+    not_done = VideoProgress.ever_completed_at.is_(None)
+    rows = await db.execute(
+        select(
+            LearningPath.id,
+            LearningPath.title,
+            LearningPath.target_date,
+            func.count(LearningPathVideo.id).filter(not_done),
+            func.coalesce(func.sum(Video.duration_seconds).filter(not_done), 0),
+            func.count(LearningPathVideo.id).filter(
+                and_(not_done, Video.duration_seconds.is_(None))
+            ),
+        )
+        .select_from(LearningPath)
+        .join(LearningPathVideo, LearningPathVideo.learning_path_id == LearningPath.id)
+        .join(Video, Video.id == LearningPathVideo.video_id)
+        .outerjoin(
+            VideoProgress,
+            and_(VideoProgress.video_id == Video.id, VideoProgress.user_id == user_id),
+        )
+        .where(LearningPath.user_id == user_id, LearningPath.target_date.is_not(None))
+        .group_by(LearningPath.id, LearningPath.title, LearningPath.target_date)
+        .order_by(LearningPath.target_date.asc(), LearningPath.id)
+    )
+    out: list[tuple[uuid.UUID, str, date, int, int, int]] = []
+    for path_id, title, target, remaining, seconds, unknown in rows:
+        assert target is not None  # filtered on in the query
+        out.append((path_id, title, target, int(remaining), int(seconds or 0), int(unknown)))
+    return out

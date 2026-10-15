@@ -8,7 +8,9 @@ from app.services.goals import (
     CLOCK_SLACK_SECONDS,
     credited_seconds,
     daily_watched_seconds,
+    deadline_estimate_minutes_per_day,
     goal_achieved,
+    last_seven_days,
     load_timezone,
     local_day_bounds,
     session_key,
@@ -135,3 +137,34 @@ def test_valid_timezones_load(name: str) -> None:
 @pytest.mark.parametrize("name", ["", "Mars/Olympus", "../etc/passwd", "not a zone", "x" * 80])
 def test_invalid_timezones_are_none(name: str) -> None:
     assert load_timezone(name) is None
+
+
+def test_last_seven_days_ends_today_oldest_first() -> None:
+    days = last_seven_days(date(2026, 10, 15))
+    assert days[0] == date(2026, 10, 9)
+    assert days[-1] == date(2026, 10, 15)
+    assert len(days) == 7
+
+
+def test_last_seven_days_crosses_a_month_boundary() -> None:
+    assert last_seven_days(date(2026, 3, 3))[:3] == [
+        date(2026, 2, 25),
+        date(2026, 2, 26),
+        date(2026, 2, 27),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("seconds", "target", "expected"),
+    [
+        (72_000, date(2026, 10, 25), 120.0),  # 20 h over 10 days = 2 h a day
+        (3_600, date(2026, 10, 16), 60.0),
+        (100, date(2026, 10, 18), 0.6),  # rounded to one decimal
+        (0, date(2026, 10, 20), 0.0),  # nothing left known: no work needed
+        (72_000, date(2026, 10, 15), None),  # due today
+        (72_000, date(2026, 10, 1), None),  # already past
+        (None, date(2026, 10, 25), None),  # nothing known
+    ],
+)
+def test_deadline_estimate(seconds: int | None, target: date, expected: float | None) -> None:
+    assert deadline_estimate_minutes_per_day(seconds, target, date(2026, 10, 15)) == expected
