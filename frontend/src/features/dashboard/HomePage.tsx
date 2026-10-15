@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom'
 import { useShell } from '@/app/shell/shellContext'
 import { Button } from '@/components/Button'
 import { useMe } from '@/features/auth/queries'
+import { GoalPanel } from '@/features/goals/GoalPanel'
+import { useGoal } from '@/features/goals/queries'
 import { useLearningPaths } from '@/features/learning-paths/queries'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { greetingFor } from '@/lib/time'
+import { formatDuration, greetingFor } from '@/lib/time'
 import { PathCard } from './PathCard'
 
 function MetricCard({
@@ -73,6 +75,7 @@ export function HomePage() {
   const { openCreatePath } = useShell()
   const me = useMe()
   const paths = useLearningPaths()
+  const goal = useGoal()
 
   const items = paths.data?.items ?? []
   const name = me.data?.display_name || me.data?.email.split('@')[0] || ''
@@ -138,7 +141,12 @@ export function HomePage() {
               value={String(completedVideos)}
               caption={`out of ${totalVideos} videos`}
             />
-            <MetricCard icon={Clock} label="Learning Time" value="—" caption="Not tracked yet" />
+            <MetricCard
+              icon={Clock}
+              label="Learning Time"
+              value={goal.data ? formatDuration(goal.data.today_watched_seconds) : '—'}
+              caption={goal.data ? 'tracked today' : goal.isError ? "Couldn't load" : 'Loading…'}
+            />
             <MetricCard
               icon={RotateCcw}
               label="Needs Revision"
@@ -171,9 +179,7 @@ export function HomePage() {
 
           <div className="grid gap-4 lg:grid-cols-3">
             <Panel title="Today's Goals" icon={Target}>
-              <p className="text-sm text-text-secondary">
-                Daily goals and viewing-time tracking are coming soon.
-              </p>
+              <GoalPanel />
             </Panel>
             <Panel title="Upcoming Revisions" icon={RotateCcw}>
               <p className="text-sm text-text-secondary">

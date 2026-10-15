@@ -166,3 +166,25 @@ describe('finishing a video', () => {
     expect(button('Mark completed')).toBeEnabled()
   })
 })
+
+describe('viewing time', () => {
+  beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }))
+  afterEach(() => vi.useRealTimers())
+
+  it('records the time the video was playing, and nothing for the time paused', async () => {
+    const mock = api({}, { 'POST /api/v1/viewing-sessions': { body: { watched_seconds: 6 } } })
+    const player = await open()
+
+    await playTo(player, 0, 6)
+    act(() => player.setState(PlayerState.PAUSED))
+    await act(async () => void vi.advanceTimersByTime(120_000)) // two minutes paused
+
+    await waitFor(() =>
+      expect(mock.calls.some((c) => c.url.endsWith('/api/v1/viewing-sessions'))).toBe(true),
+    )
+    const sent = mock.calls.filter((c) => c.url.endsWith('/api/v1/viewing-sessions'))
+    expect(sent).toHaveLength(1)
+    expect(sent[0].body).toMatchObject({ video_id: 'v1', watched_seconds: 6 })
+    expect((sent[0].body as { started_at: string }).started_at).toMatch(/Z$/)
+  })
+})

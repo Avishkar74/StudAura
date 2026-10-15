@@ -19,7 +19,9 @@ import { formatRelative, formatTimestamp } from '@/lib/time'
 import { PlayerState, type YTPlayer } from '@/lib/youtube'
 import { pathKeys } from '@/features/learning-paths/queries'
 import { shouldOfferResume } from './resume'
+import { goalKeys } from '@/features/goals/queries'
 import { usePlaybackTracker } from './usePlaybackTracker'
+import { useViewingTime } from './useViewingTime'
 import { WorkspacePanel } from './WorkspacePanel'
 import { YouTubePlayer } from './YouTubePlayer'
 
@@ -98,15 +100,22 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
     onProgress: (p) => p.learning_status && setStatus(p.learning_status),
   })
 
+  const viewing = useViewingTime(
+    video.id,
+    () => void qc.invalidateQueries({ queryKey: goalKeys.all }),
+  )
+
   const setLearningStatus = useMutation({
     mutationFn: (learning_status: LearningStatus) => putProgress(video.id, { learning_status }),
     onSuccess: (saved) => setStatus(saved.learning_status),
   })
 
-  // Path pages and the dashboard read progress from the cache; refresh them on the way out.
+  // Path pages and the dashboard read progress and today's goal from the cache; refresh them on
+  // the way out.
   useEffect(() => {
     return () => {
       void qc.invalidateQueries({ queryKey: pathKeys.all })
+      void qc.invalidateQueries({ queryKey: goalKeys.all })
     }
   }, [qc])
 
@@ -154,6 +163,7 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
             onStateChange={(state, p) => {
               if (state === PlayerState.PLAYING) setOfferResume(false)
               tracker.onStateChange(state, p)
+              viewing.onStateChange(state)
             }}
             // Every player error (private, removed, embedding blocked, bad id) means it cannot play here.
             onError={() => setFailure('unplayable')}

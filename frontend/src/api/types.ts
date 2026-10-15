@@ -84,6 +84,16 @@ export interface Note {
   updated_at: string | null
 }
 
+/** The daily goal and today's tracked viewing time (the day is counted in `timezone`). */
+export interface Goal {
+  /** Null until a goal has been set. */
+  daily_target_minutes: number | null
+  timezone: string
+  today: string
+  today_watched_seconds: number
+  goal_achieved: boolean
+}
+
 /** One of the caller's own comments on a video. */
 export interface VideoComment {
   id: string
