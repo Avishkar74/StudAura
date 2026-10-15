@@ -1,10 +1,20 @@
 import { useCallback, useState } from 'react'
 
-/** useState backed by localStorage. Storage can throw (private mode, blocked), so never rely on it. */
-export function usePersistentState<T>(key: string, initial: T) {
+const storageFor = (kind: 'local' | 'session') =>
+  kind === 'session' ? window.sessionStorage : window.localStorage
+
+/**
+ * useState backed by localStorage (or sessionStorage). Storage can throw (private mode,
+ * blocked), so never rely on it.
+ */
+export function usePersistentState<T>(
+  key: string,
+  initial: T,
+  kind: 'local' | 'session' = 'local',
+) {
   const [value, setValue] = useState<T>(() => {
     try {
-      const raw = window.localStorage.getItem(key)
+      const raw = storageFor(kind).getItem(key)
       return raw === null ? initial : (JSON.parse(raw) as T)
     } catch {
       return initial
@@ -16,14 +26,14 @@ export function usePersistentState<T>(key: string, initial: T) {
       setValue((prev) => {
         const resolved = typeof next === 'function' ? (next as (p: T) => T)(prev) : next
         try {
-          window.localStorage.setItem(key, JSON.stringify(resolved))
+          storageFor(kind).setItem(key, JSON.stringify(resolved))
         } catch {
           /* keep the in-memory value */
         }
         return resolved
       })
     },
-    [key],
+    [key, kind],
   )
 
   return [value, update] as const

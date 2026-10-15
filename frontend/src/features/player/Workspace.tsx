@@ -12,6 +12,7 @@ import { PlayerState, type YTPlayer } from '@/lib/youtube'
 import { pathKeys } from '@/features/learning-paths/queries'
 import { shouldOfferResume } from './resume'
 import { usePlaybackTracker } from './usePlaybackTracker'
+import { WorkspacePanel } from './WorkspacePanel'
 import { YouTubePlayer } from './YouTubePlayer'
 
 export interface WorkspaceProps {
@@ -113,127 +114,130 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4 p-4 sm:p-6">
-      <Link
-        to={back.to}
-        className="inline-flex w-fit items-center gap-2 text-sm text-text-secondary hover:text-text-primary"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        {back.label}
-      </Link>
-
-      {failure ? (
-        <Fallback youtubeVideoId={video.youtube_video_id} reason={failure} />
-      ) : (
-        <YouTubePlayer
-          key={video.id}
-          youtubeVideoId={video.youtube_video_id}
-          onReady={(p) => {
-            setPlayer(p)
-            tracker.onReady(p)
-          }}
-          onStateChange={(state, p) => {
-            if (state === PlayerState.PLAYING) setOfferResume(false)
-            tracker.onStateChange(state, p)
-          }}
-          // Every player error (private, removed, embedding blocked, bad id) means it cannot play here.
-          onError={() => setFailure('unplayable')}
-          onLoadFailed={() => setFailure('player-unavailable')}
-        />
-      )}
-
-      {offerResume && !failure && (
-        <div
-          role="region"
-          aria-label="Resume playback"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-1 p-3"
+    <div className="mx-auto grid max-w-7xl gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+      <div className="flex min-w-0 flex-col gap-4">
+        <Link
+          to={back.to}
+          className="inline-flex w-fit items-center gap-2 text-sm text-text-secondary hover:text-text-primary"
         >
-          <p className="text-sm">
-            Resume from <strong>{formatTimestamp(savedPosition)}</strong>?
-          </p>
-          <div className="flex gap-2">
-            <Button onClick={resume} disabled={!player}>
-              Resume
-            </Button>
-            <Button variant="secondary" onClick={startOver} disabled={!player}>
-              Start over
-            </Button>
-          </div>
-        </div>
-      )}
+          <ArrowLeft className="size-4" aria-hidden />
+          {back.label}
+        </Link>
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{video.title}</h1>
-        {video.channel_title && <p className="text-text-secondary">{video.channel_title}</p>}
-      </div>
-
-      <section
-        aria-label="Playback progress"
-        className="flex flex-col gap-3 rounded-xl border border-border bg-surface-1 p-4"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">Playback progress</h2>
-          <StatusBadge status={item.learning_status} />
-        </div>
-        {pct !== null ? (
-          <div>
-            <ProgressBar value={pct} label="Playback progress" />
-            <p className="mt-1.5 text-sm text-text-secondary">
-              {Math.round(pct)}% · {formatTimestamp(savedPosition)} of{' '}
-              {formatTimestamp(video.duration_seconds ?? 0)}
-            </p>
-          </div>
+        {failure ? (
+          <Fallback youtubeVideoId={video.youtube_video_id} reason={failure} />
         ) : (
-          <p className="text-sm text-text-secondary">
-            {savedPosition > 0
-              ? `Saved position ${formatTimestamp(savedPosition)}`
-              : 'Not started yet'}
-          </p>
+          <YouTubePlayer
+            key={video.id}
+            youtubeVideoId={video.youtube_video_id}
+            onReady={(p) => {
+              setPlayer(p)
+              tracker.onReady(p)
+            }}
+            onStateChange={(state, p) => {
+              if (state === PlayerState.PLAYING) setOfferResume(false)
+              tracker.onStateChange(state, p)
+            }}
+            // Every player error (private, removed, embedding blocked, bad id) means it cannot play here.
+            onError={() => setFailure('unplayable')}
+            onLoadFailed={() => setFailure('player-unavailable')}
+          />
         )}
-        {item.last_watched_at && (
-          <p className="text-xs text-text-muted">
-            Last watched {formatRelative(item.last_watched_at)}
-          </p>
-        )}
-        {tracker.saveFailed && (
-          <p role="status" className="text-sm text-warning">
-            Couldn&apos;t save your place. Retrying…
-          </p>
-        )}
-      </section>
 
-      {(previous || next) && (
-        <nav aria-label="Videos in this path" className="flex flex-wrap justify-between gap-3">
-          {previous ? (
-            <Link
-              to={previous.to}
-              aria-label={`Previous: ${previous.title}`}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
-            >
-              <ArrowLeft className="size-4" aria-hidden />
-              <span>
-                <span className="text-text-muted">Previous: </span>
-                {previous.title}
-              </span>
-            </Link>
+        {offerResume && !failure && (
+          <div
+            role="region"
+            aria-label="Resume playback"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-1 p-3"
+          >
+            <p className="text-sm">
+              Resume from <strong>{formatTimestamp(savedPosition)}</strong>?
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={resume} disabled={!player}>
+                Resume
+              </Button>
+              <Button variant="secondary" onClick={startOver} disabled={!player}>
+                Start over
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{video.title}</h1>
+          {video.channel_title && <p className="text-text-secondary">{video.channel_title}</p>}
+        </div>
+
+        <section
+          aria-label="Playback progress"
+          className="flex flex-col gap-3 rounded-xl border border-border bg-surface-1 p-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold">Playback progress</h2>
+            <StatusBadge status={item.learning_status} />
+          </div>
+          {pct !== null ? (
+            <div>
+              <ProgressBar value={pct} label="Playback progress" />
+              <p className="mt-1.5 text-sm text-text-secondary">
+                {Math.round(pct)}% · {formatTimestamp(savedPosition)} of{' '}
+                {formatTimestamp(video.duration_seconds ?? 0)}
+              </p>
+            </div>
           ) : (
-            <span />
+            <p className="text-sm text-text-secondary">
+              {savedPosition > 0
+                ? `Saved position ${formatTimestamp(savedPosition)}`
+                : 'Not started yet'}
+            </p>
           )}
-          {next && (
-            <Link
-              to={next.to}
-              aria-label={`Next: ${next.title}`}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
-            >
-              <span>
-                <span className="text-text-muted">Next: </span>
-                {next.title}
-              </span>
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
+          {item.last_watched_at && (
+            <p className="text-xs text-text-muted">
+              Last watched {formatRelative(item.last_watched_at)}
+            </p>
           )}
-        </nav>
-      )}
+          {tracker.saveFailed && (
+            <p role="status" className="text-sm text-warning">
+              Couldn&apos;t save your place. Retrying…
+            </p>
+          )}
+        </section>
+
+        {(previous || next) && (
+          <nav aria-label="Videos in this path" className="flex flex-wrap justify-between gap-3">
+            {previous ? (
+              <Link
+                to={previous.to}
+                aria-label={`Previous: ${previous.title}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+                <span>
+                  <span className="text-text-muted">Previous: </span>
+                  {previous.title}
+                </span>
+              </Link>
+            ) : (
+              <span />
+            )}
+            {next && (
+              <Link
+                to={next.to}
+                aria-label={`Next: ${next.title}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium hover:bg-surface-3"
+              >
+                <span>
+                  <span className="text-text-muted">Next: </span>
+                  {next.title}
+                </span>
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+            )}
+          </nav>
+        )}
+      </div>
+      <WorkspacePanel videoId={video.id} />
     </div>
   )
 }
