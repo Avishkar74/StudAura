@@ -1,10 +1,10 @@
-# LearnFlow — Technical Requirements Document
+# StudAura — Technical Requirements Document
 
 | Field | Value |
 |---|---|
 | Version | 1.1 — Supabase baseline |
 | Date | 15 October 2026 |
-| Product | LearnFlow |
+| Product | StudAura |
 | Related | `docs/PRD.md` |
 | Stack | React + Vite + TypeScript, FastAPI, Supabase (Auth + PostgreSQL), SQLAlchemy 2.x, Alembic |
 | Delivery | Docker Compose locally; Kubernetes/Helm on AWS EKS (capstone) |
@@ -16,7 +16,7 @@
 ## 1. Purpose and Scope
 
 This document defines implementation architecture, data model, API contracts, security rules,
-testing requirements, and operational requirements for LearnFlow. The PRD defines what users need;
+testing requirements, and operational requirements for StudAura. The PRD defines what users need;
 this TRD defines how to build it.
 
 ### 1.1 In Scope
@@ -44,7 +44,7 @@ this TRD defines how to build it.
 3. **Configuration is externalised** via environment variables, Kubernetes ConfigMaps, and Secrets.
 4. **Secrets never in the frontend bundle or Git**: `SUPABASE_JWT_SECRET`, `YOUTUBE_DATA_API_KEY`, `DATABASE_URL`, AWS credentials.
 5. **Business rules are pure functions/services**, testable without HTTP or DB.
-6. **YouTube is an external dependency** that can fail; the rest of LearnFlow must remain usable.
+6. **YouTube is an external dependency** that can fail; the rest of StudAura must remain usable.
 7. **No sensitive data in metrics**: no user IDs, email addresses, note content, or video IDs as Prometheus labels.
 8. **Local-first**: Docker Compose works before any AWS infrastructure is provisioned.
 
@@ -83,7 +83,7 @@ Delivery:
 ## 4. Repository Structure
 
 ```
-learnflow/
+studaura/
 ├── CLAUDE.md
 ├── docs/
 │   ├── PRD.md
@@ -134,7 +134,7 @@ learnflow/
 │   ├── Dockerfile
 │   └── pyproject.toml
 ├── deploy/
-│   ├── helm/learnflow/
+│   ├── helm/studaura/
 │   ├── terraform/
 │   ├── prometheus/
 │   └── grafana/
@@ -203,7 +203,7 @@ VITE_SUPABASE_ANON_KEY=eyJ...   # safe to expose; scoped by RLS + backend auth
 
 # Backend (never expose to frontend)
 SUPABASE_JWT_SECRET=your-supabase-jwt-secret
-DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/learnflow
+DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/studaura
 YOUTUBE_DATA_API_KEY=...
 CORS_ORIGINS=http://localhost:5173,https://yourdomain.com
 APP_ENV=local
@@ -788,7 +788,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 3. Tag images with `GITHUB_SHA`.
 4. Trivy scan both images; save reports as artefacts.
 5. Fail on Critical; review High per policy.
-6. Push images to GHCR: `ghcr.io/<org>/learnflow-backend:<sha>` and `learnflow-frontend:<sha>`.
+6. Push images to GHCR: `ghcr.io/<org>/studaura-backend:<sha>` and `studaura-frontend:<sha>`.
 7. Optional: trigger Helm deployment job.
 8. Post-deploy smoke: `GET /health`, `GET /ready`, one authenticated API call.
 
@@ -828,7 +828,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 ### 15.1 Chart Structure
 
 ```
-deploy/helm/learnflow/
+deploy/helm/studaura/
 ├── Chart.yaml
 ├── values.yaml          # non-secret defaults
 ├── values.prod.yaml     # overrides for production
@@ -852,7 +852,7 @@ deploy/helm/learnflow/
 - **Migrations**: run as a Kubernetes Job or `initContainer` before the backend Deployment rolls out. Do not run in every replica.
 - **Secrets**: `DATABASE_URL`, `SUPABASE_JWT_SECRET`, `YOUTUBE_DATA_API_KEY` from Kubernetes Secrets (not ConfigMaps). Never commit manifests containing real values.
 - **Ingress**: expose frontend at `/`; route `/api` to backend service. Configure path rewriting if needed.
-- **Namespace**: use a dedicated namespace (e.g. `learnflow`).
+- **Namespace**: use a dedicated namespace (e.g. `studaura`).
 
 ---
 
@@ -883,7 +883,7 @@ Do not label metrics with `user_id`, `video_id`, note text, email, or path names
 
 ### 16.3 Grafana Panels
 
-Provision via `deploy/grafana/dashboards/learnflow.json`:
+Provision via `deploy/grafana/dashboards/studaura.json`:
 
 - Request rate by route group.
 - 4xx / 5xx response rate.
@@ -908,12 +908,12 @@ Provision via `deploy/grafana/dashboards/learnflow.json`:
 
 **Useful commands:**
 ```bash
-kubectl get pods,svc,ingress,hpa -n learnflow
-kubectl describe deployment learnflow-backend -n learnflow
-kubectl logs deployment/learnflow-backend -n learnflow --tail=100
-kubectl port-forward svc/learnflow-backend 8000:8000 -n learnflow
-kubectl rollout status deployment/learnflow-backend -n learnflow
-kubectl rollout undo deployment/learnflow-backend -n learnflow
+kubectl get pods,svc,ingress,hpa -n studaura
+kubectl describe deployment studaura-backend -n studaura
+kubectl logs deployment/studaura-backend -n studaura --tail=100
+kubectl port-forward svc/studaura-backend 8000:8000 -n studaura
+kubectl rollout status deployment/studaura-backend -n studaura
+kubectl rollout undo deployment/studaura-backend -n studaura
 terraform plan
 terraform destroy   # only after confirming workspace and intended resources
 ```
