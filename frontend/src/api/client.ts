@@ -7,6 +7,8 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
+    /** The `details` array from the backend's error envelope (e.g. the current note on a 409). */
+    public readonly details: unknown[] = [],
   ) {
     super(message)
     this.name = 'ApiError'
@@ -47,12 +49,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as {
-      error?: { code?: string; message?: string }
+      error?: { code?: string; message?: string; details?: unknown[] }
     } | null
     throw new ApiError(
       res.status,
       body?.error?.code ?? 'HTTP_ERROR',
       body?.error?.message ?? res.statusText,
+      body?.error?.details ?? [],
     )
   }
   return (await res.json()) as T

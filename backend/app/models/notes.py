@@ -11,12 +11,18 @@ class VideoNote(Base):
     """One primary note per user and video."""
 
     __tablename__ = "video_notes"
-    __table_args__ = (UniqueConstraint("user_id", "video_id"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "video_id"),
+        CheckConstraint("revision >= 1", name="revision_positive"),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     video_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("videos.id"))
     body: Mapped[str] = mapped_column(Text, server_default="")
+    # Bumped on every save. Lets autosave detect that the note changed in another tab or
+    # device instead of silently overwriting it.
+    revision: Mapped[int] = mapped_column(Integer, server_default="1")
     updated_at: Mapped[datetime] = now_column(onupdate=True)
 
 

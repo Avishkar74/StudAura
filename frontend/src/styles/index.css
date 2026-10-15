@@ -23,3 +23,53 @@
     outline-offset: 2px;
   }
 }
+
+/* Rich-text note content (TipTap output). Tailwind's reset strips list/heading styles. */
+@layer components {
+  .note-content {
+    @apply text-text-primary;
+    line-height: 1.6;
+  }
+  .note-content > * + * {
+    margin-top: 0.6em;
+  }
+  .note-content h1 {
+    @apply text-xl font-semibold;
+  }
+  .note-content h2 {
+    @apply text-lg font-semibold;
+  }
+  .note-content h3 {
+    @apply text-base font-semibold;
+  }
+  .note-content ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+  }
+  .note-content ol {
+    list-style: decimal;
+    padding-left: 1.5rem;
+  }
+  .note-content li > p {
+    margin: 0;
+  }
+  .note-content a {
+    @apply text-info underline;
+  }
+  .note-content code {
+    @apply rounded bg-surface-3 px-1 py-0.5 text-sm;
+  }
+  .note-content pre {
+    @apply overflow-x-auto rounded-lg bg-surface-2 p-3;
+  }
+  .note-content pre code {
+    @apply bg-transparent p-0;
+  }
+  .note-content blockquote {
+    @apply border-l-2 border-border pl-3 text-text-secondary;
+  }
+  .note-content p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none float-left h-0 text-text-muted;
+  }
+}

@@ -8,6 +8,14 @@ import { setViewport } from './viewport'
 // vi.mock('@/app/supabase') can replace them.
 configure({ asyncUtilTimeout: 4000 })
 
+// jsdom has no layout engine. ProseMirror (the note editor) measures ranges when it scrolls the
+// cursor into view, so give it empty measurements instead of letting it throw.
+const emptyRects = Object.assign([] as unknown as DOMRectList, { item: () => null })
+Range.prototype.getClientRects = () => emptyRects
+Range.prototype.getBoundingClientRect = () => new DOMRect(0, 0, 0, 0)
+Element.prototype.getClientRects = () => emptyRects
+document.elementFromPoint = () => null
+
 beforeEach(() => {
   window.localStorage.clear()
   setViewport('desktop')

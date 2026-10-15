@@ -65,6 +65,8 @@ function api(items: PathVideo[], extra: Parameters<typeof mockApi>[0] = {}) {
       body: { total: items.length, limit: 500, offset: 0, items },
     },
     'PUT /api/v1/videos/': { body: {} },
+    // The notes panel loads the note for whichever video is open.
+    'GET /api/v1/videos/v': { body: { video_id: 'v', body: '', revision: 0, updated_at: null } },
     ...extra,
   })
 }
@@ -388,6 +390,9 @@ describe('standalone video (/learn/saved/:videoId)', () => {
       ...ME,
       'GET /api/v1/learning-paths': {
         body: { total: 0, limit: 100, offset: 0, items: [] },
+      },
+      'GET /api/v1/videos/v1/notes': {
+        body: { video_id: 'v1', body: '', revision: 0, updated_at: null },
       },
       'GET /api/v1/videos/v1': {
         body: {
