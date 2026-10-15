@@ -20,7 +20,7 @@ dependencies = [
     "nh3>=0.2.18,<1",
     "prometheus-client>=0.21,<1",
     "tzdata>=2024.1",
-    "prometheus-fastapi-instrumentator>=7.0,<8",
+    "prometheus-fastapi-instrumentator>=7.0,<9",
 ]
 
 [project.optional-dependencies]
