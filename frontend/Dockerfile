@@ -1,6 +1,9 @@
-FROM node:20-alpine AS deps
+# Node 24: the locked dependencies (vitest, jsdom, undici, supabase-js) need Node >= 24.15 on the
+# 24 line, and .npmrc makes `npm ci` refuse to run on anything else. Keep in step with
+# frontend/.nvmrc and "engines" in package.json.
+FROM node:24-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 # Dev server used by docker compose (hot reload via bind-mounted src/).
