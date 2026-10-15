@@ -396,7 +396,8 @@ CREATE TABLE saved_videos (
 | GET | `/api/v1/videos/{id}/comments` | List user's comments for a video |
 | POST | `/api/v1/videos/{id}/comments` | Add comment |
 | DELETE | `/api/v1/comments/{id}` | Delete own comment |
-| GET | `/api/v1/goals` | Get user's daily goal + today's summary |
+| GET | `/api/v1/dashboard` | Video to continue + recently watched (with progress and path) |
+| GET | `/api/v1/goals` | Get user's daily goal + today's and this week's tracked time |
 | PUT | `/api/v1/goals` | Create/update daily goal |
 | POST | `/api/v1/viewing-sessions` | Record/update a viewing session |
 | GET | `/api/v1/revisions` | List active revision queue |

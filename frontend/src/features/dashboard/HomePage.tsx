@@ -3,14 +3,17 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useShell } from '@/app/shell/shellContext'
 import { Button } from '@/components/Button'
+import type { LearningItem } from '@/api/types'
 import { useMe } from '@/features/auth/queries'
 import { GoalPanel } from '@/features/goals/GoalPanel'
 import { useGoal } from '@/features/goals/queries'
 import { useLearningPaths } from '@/features/learning-paths/queries'
 import { useRevisionQueue } from '@/features/revisions/queries'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { formatDue, formatDuration, greetingFor } from '@/lib/time'
+import { formatDue, formatDuration, formatRelative, greetingFor } from '@/lib/time'
+import { ContinueLearning, learnUrl, Thumbnail } from './ContinueLearning'
 import { PathCard } from './PathCard'
+import { useDashboardLearning } from './queries'
 
 function MetricCard({
   icon: Icon,
@@ -114,6 +117,52 @@ function RevisionPreview() {
   )
 }
 
+/** Compact rows of the latest watched videos, for a quick return. */
+function RecentlyWatched({
+  items,
+  loading,
+  failed,
+}: {
+  items: LearningItem[]
+  loading: boolean
+  failed: boolean
+}) {
+  if (loading) return <p className="text-sm text-text-secondary">Loading…</p>
+  if (failed) {
+    return <p className="text-sm text-text-secondary">We couldn&apos;t load your recent videos.</p>
+  }
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-text-secondary">
+        Videos you watch will show up here so you can jump back in.
+      </p>
+    )
+  }
+  return (
+    <ul className="flex flex-col gap-2">
+      {items.slice(0, 4).map((item) => (
+        <li key={item.video_id}>
+          <Link
+            to={learnUrl(item)}
+            className="flex items-center gap-3 rounded-lg bg-surface-2 p-2 hover:bg-surface-3"
+          >
+            <Thumbnail
+              src={item.video.thumbnail_url}
+              className="aspect-video w-20 shrink-0 overflow-hidden rounded"
+            />
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium">{item.video.title}</span>
+              <span className="block truncate text-xs text-text-muted">
+                {item.path?.title ?? 'Saved video'} · {formatRelative(item.last_watched_at)}
+              </span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function Skeleton() {
   return (
     <div
@@ -135,6 +184,7 @@ export function HomePage() {
   const paths = useLearningPaths()
   const goal = useGoal()
   const revisions = useRevisionQueue()
+  const learning = useDashboardLearning()
 
   const items = paths.data?.items ?? []
   const name = me.data?.display_name || me.data?.email.split('@')[0] || ''
@@ -204,7 +254,13 @@ export function HomePage() {
               icon={Clock}
               label="Learning Time"
               value={goal.data ? formatDuration(goal.data.today_watched_seconds) : '—'}
-              caption={goal.data ? 'tracked today' : goal.isError ? "Couldn't load" : 'Loading…'}
+              caption={
+                goal.data
+                  ? `${formatDuration(goal.data.week_watched_seconds)} this week`
+                  : goal.isError
+                    ? "Couldn't load"
+                    : 'Loading…'
+              }
             />
             <MetricCard
               icon={RotateCcw}
@@ -223,9 +279,47 @@ export function HomePage() {
           </section>
 
           <section aria-labelledby="continue-heading">
+            <h2 id="continue-heading" className="mb-3 text-xl font-semibold">
+              Continue Learning
+            </h2>
+            {learning.data?.continue_learning ? (
+              <ContinueLearning item={learning.data.continue_learning} />
+            ) : learning.isPending ? (
+              <div className="h-40 animate-pulse rounded-xl border border-border bg-surface-1" />
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-surface-1 p-5 text-sm text-text-secondary">
+                {learning.isError
+                  ? "We couldn't load where you left off. Your progress is safe."
+                  : "You're not partway through a video. Open a learning path and press play on one."}{' '}
+                <Link to="/learning-paths" className="text-text-primary underline">
+                  Browse paths
+                </Link>
+              </div>
+            )}
+          </section>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Panel title="Today's Goals" icon={Target}>
+              <GoalPanel />
+            </Panel>
+            <Panel title="Upcoming Revisions" icon={RotateCcw}>
+              <RevisionPreview />
+            </Panel>
+            <Panel title="Recently Watched" icon={Clock}>
+              <RecentlyWatched
+                items={(learning.data?.recently_watched ?? []).filter(
+                  (i) => i.video_id !== learning.data?.continue_learning?.video_id,
+                )}
+                loading={learning.isPending}
+                failed={learning.isError}
+              />
+            </Panel>
+          </div>
+
+          <section aria-labelledby="paths-heading">
             <div className="mb-3 flex items-center justify-between">
-              <h2 id="continue-heading" className="text-xl font-semibold">
-                Continue Learning
+              <h2 id="paths-heading" className="text-xl font-semibold">
+                Your Learning Paths
               </h2>
               <Link
                 to="/learning-paths"
@@ -243,20 +337,6 @@ export function HomePage() {
               ))}
             </div>
           </section>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="Today's Goals" icon={Target}>
-              <GoalPanel />
-            </Panel>
-            <Panel title="Upcoming Revisions" icon={RotateCcw}>
-              <RevisionPreview />
-            </Panel>
-            <Panel title="Recent Activity" icon={Clock}>
-              <p className="text-sm text-text-secondary">
-                Videos you watch will show up here so you can jump back in.
-              </p>
-            </Panel>
-          </div>
         </>
       )}
     </div>
