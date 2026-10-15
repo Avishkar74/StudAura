@@ -1,6 +1,13 @@
 import pytest
 
-from app.services.notes import MAX_NOTE_BYTES, is_too_large, sanitize_note_html
+from app.services.notes import (
+    MAX_NOTE_BYTES,
+    is_too_large,
+    note_snippet,
+    note_title,
+    plain_text_lines,
+    sanitize_note_html,
+)
 
 
 @pytest.mark.parametrize(
@@ -84,3 +91,43 @@ def test_size_limit_is_measured_in_bytes() -> None:
     # 3 bytes per character: 40,000 of them are 120,000 bytes, over the limit.
     assert is_too_large("日" * 40_000)
     assert not is_too_large("日" * 30_000)
+
+
+# --- Titles and snippets for the notes list ---------------------------------------
+
+
+def test_the_title_is_the_first_line_without_markup() -> None:
+    html = "<h1>Binary <em>search</em></h1><p>Halve the range each step.</p>"
+    assert note_title(html) == "Binary search"
+    assert note_snippet(html) == "Halve the range each step."
+
+
+def test_lines_come_from_paragraphs_list_items_and_breaks() -> None:
+    html = "<p>First</p><ul><li>one</li><li>two</li></ul><p>a<br>b</p>"
+    assert plain_text_lines(html) == ["First", "one", "two", "a", "b"]
+
+
+def test_entities_are_decoded_and_whitespace_collapsed() -> None:
+    assert note_title("<p>  Tom &amp;   Jerry &lt;3  </p>") == "Tom & Jerry <3"
+
+
+def test_a_one_line_note_uses_that_line_as_its_snippet_too() -> None:
+    assert note_title("<p>Only line</p>") == "Only line"
+    assert note_snippet("<p>Only line</p>") == "Only line"
+
+
+def test_long_text_is_shortened_with_an_ellipsis() -> None:
+    long = "x" * 200
+    assert note_title(f"<p>{long}</p>").endswith("…")
+    assert len(note_title(f"<p>{long}</p>")) == 80
+    assert len(note_snippet(f"<p>t</p><p>{long}</p>")) == 160
+
+
+@pytest.mark.parametrize("html", ["", "<p></p>", "<p> <br> </p>", "<ul><li></li></ul>"])
+def test_a_note_with_no_text_has_no_title(html: str) -> None:
+    assert note_title(html) == ""
+    assert note_snippet(html) == ""
+
+
+def test_scripts_do_not_leak_into_the_text() -> None:
+    assert note_title("<p>Safe</p><script>alert(1)</script>") == "Safe"
