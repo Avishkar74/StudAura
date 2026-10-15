@@ -51,3 +51,34 @@ def apply_manual_status(
     if new_status == "COMPLETED" and ever_completed_at is None:
         ever_completed_at = now
     return new_status, ever_completed_at
+
+
+# How close to the end the player must report being for an ENDED event to count.
+ENDED_TOLERANCE_SECONDS = 10.0
+
+
+def reached_the_end(position: float, duration_seconds: int | None) -> bool:
+    """An ENDED event only makes sense at the end of the video. When the duration is unknown
+    there is nothing to check against, so the player's word is accepted."""
+    if not duration_seconds or duration_seconds <= 0:
+        return True
+    return position >= duration_seconds - ENDED_TOLERANCE_SECONDS
+
+
+def apply_completion_event(
+    current: str,
+    ever_completed_at: datetime | None,
+    session_was_seeked: bool,
+    now: datetime,
+) -> tuple[str, datetime | None, str]:
+    """The player reported ENDED. Returns (status, ever_completed_at, outcome).
+
+    Only a clean session auto-completes: a seek proves nothing about the skipped content, so a
+    seeked session changes nothing (PRD 7.3, TRD 9.1). A video in revision stays in revision
+    (the student is re-studying it) but the playback does not clear its completion history.
+    """
+    if session_was_seeked:
+        return current, ever_completed_at, "seeked"
+    if current == "NEEDS_REVISION":
+        return current, ever_completed_at, "kept_revision"
+    return "COMPLETED", ever_completed_at or now, "completed"

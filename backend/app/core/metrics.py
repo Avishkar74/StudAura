@@ -11,4 +11,7 @@ note_save_failures_total = Counter(
 progress_updates_total = Counter(
     "app_progress_updates_total", "Playback progress updates", ["outcome"]
 )
+completion_events_total = Counter(
+    "app_completion_events_total", "Player ENDED events by outcome", ["outcome"]
+)
 db_readiness = Gauge("db_readiness", "1 if the database is reachable, else 0")

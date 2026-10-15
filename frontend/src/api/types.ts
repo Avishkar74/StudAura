@@ -84,6 +84,15 @@ export interface Note {
   updated_at: string | null
 }
 
+/** One of the caller's own comments on a video. */
+export interface VideoComment {
+  id: string
+  video_id: string
+  body: string
+  timestamp_seconds: number | null
+  created_at: string
+}
+
 export interface VideoImportResult {
   status: 'added' | 'skipped'
   reason: string | null

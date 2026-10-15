@@ -1,8 +1,16 @@
-import { ArrowLeft, ArrowRight, ExternalLink, TriangleAlert } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  CircleCheck,
+  ExternalLink,
+  RotateCcw,
+  TriangleAlert,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { PathVideo, VideoDetail } from '@/api/types'
-import { useQueryClient } from '@tanstack/react-query'
+import type { LearningStatus, PathVideo, VideoDetail } from '@/api/types'
+import { putProgress } from '@/api/videos'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/Button'
 import { ProgressBar } from '@/components/ProgressBar'
 import { StatusBadge } from '@/components/StatusBadge'
@@ -80,11 +88,19 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
     video.availability_state === 'embed_disabled' ? 'unplayable' : null,
   )
   const [player, setPlayer] = useState<YTPlayer | null>(null)
+  // Playback can change the status (a clean ending completes the video), so follow the server.
+  const [status, setStatus] = useState<LearningStatus>(item.learning_status)
 
   const tracker = usePlaybackTracker({
     videoId: video.id,
     savedPosition: item.last_position_seconds,
     onSaved: setSavedPosition,
+    onProgress: (p) => p.learning_status && setStatus(p.learning_status),
+  })
+
+  const setLearningStatus = useMutation({
+    mutationFn: (learning_status: LearningStatus) => putProgress(video.id, { learning_status }),
+    onSuccess: (saved) => setStatus(saved.learning_status),
   })
 
   // Path pages and the dashboard read progress from the cache; refresh them on the way out.
@@ -100,6 +116,7 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
       : null
 
   function resume() {
+    tracker.movedTo(savedPosition)
     player?.seekTo(savedPosition, true)
     player?.playVideo()
     setOfferResume(false)
@@ -175,7 +192,7 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-semibold">Playback progress</h2>
-            <StatusBadge status={item.learning_status} />
+            <StatusBadge status={status} />
           </div>
           {pct !== null ? (
             <div>
@@ -195,6 +212,31 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
           {item.last_watched_at && (
             <p className="text-xs text-text-muted">
               Last watched {formatRelative(item.last_watched_at)}
+            </p>
+          )}
+          <div role="group" aria-label="Learning status" className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setLearningStatus.mutate('COMPLETED')}
+              disabled={status === 'COMPLETED' || setLearningStatus.isPending}
+              aria-pressed={status === 'COMPLETED'}
+            >
+              <CircleCheck className="mr-2 size-4" aria-hidden />
+              {status === 'COMPLETED' ? 'Completed' : 'Mark completed'}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setLearningStatus.mutate('NEEDS_REVISION')}
+              disabled={status === 'NEEDS_REVISION' || setLearningStatus.isPending}
+              aria-pressed={status === 'NEEDS_REVISION'}
+            >
+              <RotateCcw className="mr-2 size-4" aria-hidden />
+              Needs revision
+            </Button>
+          </div>
+          {setLearningStatus.isError && (
+            <p role="alert" className="text-sm text-warning">
+              Couldn&apos;t update the status. Try again.
             </p>
           )}
           {tracker.saveFailed && (
@@ -237,7 +279,17 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
           </nav>
         )}
       </div>
-      <WorkspacePanel videoId={video.id} />
+      <WorkspacePanel
+        videoId={video.id}
+        getCurrentTime={() => {
+          try {
+            return player ? player.getCurrentTime() : null
+          } catch {
+            return null // the player was already destroyed
+          }
+        }}
+        onSeek={player ? (seconds) => player.seekTo(seconds, true) : undefined}
+      />
     </div>
   )
 }

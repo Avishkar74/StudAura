@@ -439,3 +439,68 @@ async def test_updates_are_counted_without_identifying_labels(
     assert 'app_progress_updates_total{outcome="clamped"}' in metrics
     assert str(video.id) not in metrics
     assert video.youtube_video_id not in metrics
+
+
+# --- Completion on ENDED ---------------------------------------------------
+
+
+async def ended(
+    client: httpx.AsyncClient, who: Actor, video: Video, *, seeked: bool, at: float = 600
+) -> httpx.Response:
+    return await put(
+        client,
+        who,
+        video,
+        {"last_position_seconds": at, "playback_ended": True, "session_seeked": seeked},
+    )
+
+
+async def test_a_clean_ending_completes_the_video(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    _, video = await video_in_path(auth_client, session, alice)
+    resp = await ended(auth_client, alice, video, seeked=False)
+    assert resp.status_code == 200
+    assert resp.json()["learning_status"] == "COMPLETED"
+    assert resp.json()["ever_completed_at"] is not None
+
+
+async def test_a_seeked_session_does_not_complete_the_video(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    _, video = await video_in_path(auth_client, session, alice)
+    resp = await ended(auth_client, alice, video, seeked=True)
+    assert resp.status_code == 200
+    assert resp.json()["learning_status"] == "IN_PROGRESS"  # it did play
+    assert resp.json()["ever_completed_at"] is None
+    assert resp.json()["last_position_seconds"] == 600  # the position is still saved
+
+
+async def test_an_ended_report_far_from_the_end_does_not_complete(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    _, video = await video_in_path(auth_client, session, alice)
+    resp = await ended(auth_client, alice, video, seeked=False, at=30)
+    assert resp.json()["learning_status"] == "IN_PROGRESS"
+    assert resp.json()["ever_completed_at"] is None
+
+
+async def test_a_video_in_revision_stays_in_revision_after_a_clean_ending(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    _, video = await video_in_path(auth_client, session, alice)
+    await put(auth_client, alice, video, {"learning_status": "COMPLETED"})
+    await put(auth_client, alice, video, {"learning_status": "NEEDS_REVISION"})
+    resp = await ended(auth_client, alice, video, seeked=False)
+    assert resp.json()["learning_status"] == "NEEDS_REVISION"
+    assert resp.json()["ever_completed_at"] is not None
+
+
+async def test_ended_without_the_seek_flag_is_rejected(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    _, video = await video_in_path(auth_client, session, alice)
+    resp = await put(
+        auth_client, alice, video, {"last_position_seconds": 600, "playback_ended": True}
+    )
+    assert resp.status_code == 422

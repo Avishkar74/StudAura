@@ -16,6 +16,9 @@ export function getVideo(videoId: string) {
 export interface ProgressUpdate {
   last_position_seconds?: number
   learning_status?: LearningStatus
+  /** The player reported ENDED; needs a position and `session_seeked`. */
+  playback_ended?: boolean
+  session_seeked?: boolean
 }
 
 /** Idempotent. `keepalive` lets the request finish while the page is closing. */

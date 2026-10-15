@@ -86,7 +86,7 @@ describe('workspace panel tabs', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Comments' }))
     expect(screen.getByRole('tab', { name: 'Comments' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByText('Comments are coming soon.')).toBeInTheDocument()
+    expect(await screen.findByRole('textbox', { name: 'Add a comment' })).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Note' })).not.toBeInTheDocument()
 
     await user.keyboard('{ArrowRight}')
