@@ -76,6 +76,14 @@ export interface VideoDetail extends ProgressFields {
   video: VideoMeta
 }
 
+/** The caller's note for a video. `revision` is 0 (and `body` empty) until one is saved. */
+export interface Note {
+  video_id: string
+  body: string
+  revision: number
+  updated_at: string | null
+}
+
 export interface VideoImportResult {
   status: 'added' | 'skipped'
   reason: string | null
