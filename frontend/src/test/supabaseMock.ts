@@ -3,13 +3,13 @@ import { vi } from 'vitest'
 
 type Listener = (event: string, session: Session | null) => void
 
-export function fakeSession(email = 'ada@example.test'): Session {
+export function fakeSession(email = 'ada@example.test', id = 'user-1'): Session {
   return {
     access_token: 'access-token',
     refresh_token: 'refresh-token',
     expires_in: 3600,
     token_type: 'bearer',
-    user: { id: 'user-1', email } as Session['user'],
+    user: { id, email } as Session['user'],
   } as Session
 }
 
@@ -22,24 +22,42 @@ export function createAuthMock() {
     listeners.forEach((l) => l(next ? 'SIGNED_IN' : 'SIGNED_OUT', next))
   }
 
+  const auth = {
+    getSession: vi.fn(async () => ({ data: { session }, error: null })),
+    refreshSession: vi.fn(async () => ({ data: { session }, error: null })),
+    onAuthStateChange: vi.fn((cb: Listener) => {
+      listeners.add(cb)
+      return { data: { subscription: { unsubscribe: () => listeners.delete(cb) } } }
+    }),
+    signInWithPassword: vi.fn(async ({ email }: { email: string; password: string }) => {
+      set(fakeSession(email))
+      return { data: { session }, error: null }
+    }),
+    signUp: vi.fn(async () => ({ data: { session: null, user: {} }, error: null })),
+    signOut: vi.fn(async () => {
+      set(null)
+      return { error: null }
+    }),
+  }
+
   return {
+    auth,
     setSession: set,
-    auth: {
-      getSession: vi.fn(async () => ({ data: { session }, error: null })),
-      refreshSession: vi.fn(async () => ({ data: { session }, error: null })),
-      onAuthStateChange: vi.fn((cb: Listener) => {
-        listeners.add(cb)
-        return { data: { subscription: { unsubscribe: () => listeners.delete(cb) } } }
-      }),
-      signInWithPassword: vi.fn(async ({ email }: { email: string; password: string }) => {
-        set(fakeSession(email))
-        return { data: { session }, error: null }
-      }),
-      signUp: vi.fn(async () => ({ data: { session: null, user: {} }, error: null })),
-      signOut: vi.fn(async () => {
-        set(null)
-        return { error: null }
-      }),
+    /** Forget the session and listeners; call between tests. */
+    reset() {
+      session = null
+      listeners.clear()
+      Object.values(auth).forEach((fn) => fn.mockClear())
     },
   }
+}
+
+export type AuthMock = ReturnType<typeof createAuthMock>
+
+/** Shared instance used by `vi.mock('@/app/supabase', ...)` in component tests. */
+export const authMock = createAuthMock()
+
+export const supabaseModule = {
+  isSupabaseConfigured: true,
+  supabase: { auth: authMock.auth },
 }
