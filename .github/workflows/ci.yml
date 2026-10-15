@@ -97,6 +97,48 @@ jobs:
       - name: Build
         run: npm run build
 
+  terraform:
+    name: Terraform (fmt, validate, test, Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: deploy/terraform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.6
+          terraform_wrapper: false
+      - name: Format
+        run: terraform fmt -check -recursive -diff
+      # `-backend=false`: no AWS account is needed. `-lockfile=readonly` fails the job if the
+      # committed .terraform.lock.hcl is out of date instead of quietly rewriting it.
+      - name: Validate (infrastructure)
+        run: |
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform validate
+      - name: Validate (state bucket bootstrap)
+        working-directory: deploy/terraform/bootstrap
+        run: |
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform validate
+      - name: Plan tests (provider mocked, no credentials)
+        run: terraform test
+      # Misconfigurations rated HIGH or CRITICAL fail the job. Accepted risks are annotated in the
+      # code with `#trivy:ignore` and a reason (docs/CICD.md).
+      - name: Trivy misconfiguration scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: deploy/terraform
+          skip-dirs: deploy/terraform/tests
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          hide-progress: true
+
   images:
     name: "Image (${{ matrix.image }}): build and smoke test"
     runs-on: ubuntu-latest

@@ -1,0 +1,8 @@
+# Copy to backend.hcl (git-ignored) and fill in. `terraform -chdir=bootstrap output backend_config`
+# prints these values for you.
+bucket       = "studaura-tfstate-<account-id>-ap-south-1"
+key          = "studaura/demo/terraform.tfstate"
+region       = "ap-south-1"
+encrypt      = true
+kms_key_id   = "arn:aws:kms:ap-south-1:<account-id>:key/<key-id>"
+use_lockfile = true
