@@ -10,6 +10,10 @@ class VideoUnavailableError(YouTubeError):
     """The video is private, deleted, or otherwise cannot be read."""
 
 
+class PlaylistUnavailableError(YouTubeError):
+    """The playlist is private, deleted, or does not exist."""
+
+
 class QuotaExceededError(YouTubeError):
     """The daily API quota is exhausted."""
 

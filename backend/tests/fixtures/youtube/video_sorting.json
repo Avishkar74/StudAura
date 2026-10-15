@@ -1,0 +1,42 @@
+{
+  "kind": "youtube#videoListResponse",
+  "items": [
+    {
+      "kind": "youtube#video",
+      "id": "sortingVid1",
+      "snippet": {
+        "title": "Sorting Algorithms",
+        "channelTitle": "Example Academy",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/sortingVid1/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/sortingVid1/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/sortingVid1/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT41M5S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    }
+  ],
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 1
+  }
+}
