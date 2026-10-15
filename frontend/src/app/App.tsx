@@ -4,8 +4,11 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { RedirectIfAuthed, RequireAuth } from '@/features/auth/RequireAuth'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { HomePage } from '@/features/dashboard/HomePage'
+import { GoalsPage } from '@/features/goals/GoalsPage'
+import { AllPathsPage } from '@/features/learning-paths/AllPathsPage'
 import { PathPage } from '@/features/learning-paths/PathPage'
 import { PathWorkspacePage, SavedWorkspacePage } from '@/features/player/WorkspacePages'
+import { RevisionPage } from '@/features/revisions/RevisionPage'
 import { AppShell } from './AppShell'
 import { PlaceholderPage } from './PlaceholderPage'
 
@@ -34,36 +37,12 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<HomePage />} />
-          <Route
-            path="/learning-paths"
-            element={
-              <PlaceholderPage
-                title="All Learning Paths"
-                description="Manage and explore all your learning paths in one place."
-              />
-            }
-          />
+          <Route path="/learning-paths" element={<AllPathsPage />} />
           <Route path="/learning-paths/:pathId" element={<PathPage />} />
           <Route path="/learn/:pathId/:videoId" element={<PathWorkspacePage />} />
           <Route path="/learn/saved/:videoId" element={<SavedWorkspacePage />} />
-          <Route
-            path="/goals"
-            element={
-              <PlaceholderPage
-                title="Daily Goals"
-                description="Set a daily viewing target and track your progress."
-              />
-            }
-          />
-          <Route
-            path="/revision"
-            element={
-              <PlaceholderPage
-                title="Needs Revision"
-                description="Videos you marked for revision, ordered by due date."
-              />
-            }
-          />
+          <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/revision" element={<RevisionPage />} />
           <Route
             path="/notes"
             element={

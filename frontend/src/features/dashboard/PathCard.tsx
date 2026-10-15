@@ -2,7 +2,7 @@ import { FolderOpen, GraduationCap, Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { LearningPath } from '@/api/types'
 import { ProgressBar } from '@/components/ProgressBar'
-import { formatRelative } from '@/lib/time'
+import { formatDate, formatRelative } from '@/lib/time'
 
 export function PathCard({ path }: { path: LearningPath }) {
   const started = path.completed_videos > 0 || path.in_progress_videos > 0 || path.last_activity_at
@@ -18,9 +18,13 @@ export function PathCard({ path }: { path: LearningPath }) {
           <h3 className="line-clamp-2 font-semibold">{path.title}</h3>
           <p className="text-sm text-text-secondary">
             {path.total_videos} {path.total_videos === 1 ? 'video' : 'videos'}
+            {path.target_date && <span> · Target {formatDate(path.target_date)}</span>}
           </p>
         </div>
       </div>
+      {path.description && (
+        <p className="line-clamp-2 text-sm text-text-secondary">{path.description}</p>
+      )}
 
       <div>
         <ProgressBar value={path.completion_pct} label={`${path.title} progress`} />

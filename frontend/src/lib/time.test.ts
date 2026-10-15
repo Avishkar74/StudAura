@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, formatDue, formatDuration, formatRelative, greetingFor } from './time'
+import {
+  addDays,
+  formatDate,
+  formatDue,
+  formatWeekday,
+  formatDuration,
+  formatRelative,
+  greetingFor,
+} from './time'
 
 const NOW = new Date('2026-10-15T12:00:00Z')
 const ago = (seconds: number) => new Date(NOW.getTime() - seconds * 1000).toISOString()
@@ -75,5 +83,14 @@ describe('formatDue', () => {
     ['2027-01-05', 'Due Jan 5'],
   ])('%s reads %s', (due, expected) => {
     expect(formatDue(due, today)).toBe(expected)
+  })
+})
+
+describe('formatDate and formatWeekday', () => {
+  it('formats calendar days without drifting across timezones', () => {
+    expect(formatDate('2026-10-20')).toBe('Oct 20, 2026')
+    expect(formatDate('2026-01-01')).toBe('Jan 1, 2026')
+    expect(formatWeekday('2026-10-15')).toBe('Thu')
+    expect(formatWeekday('2026-10-18')).toBe('Sun')
   })
 })

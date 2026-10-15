@@ -399,6 +399,7 @@ CREATE TABLE saved_videos (
 | GET | `/api/v1/dashboard` | Video to continue + recently watched (with progress and path) |
 | GET | `/api/v1/goals` | Get user's daily goal + today's and this week's tracked time |
 | PUT | `/api/v1/goals` | Create/update daily goal |
+| GET | `/api/v1/goals/deadlines` | Paths with a target date: remaining time and the minutes/day needed |
 | POST | `/api/v1/viewing-sessions` | Record/update a viewing session |
 | GET | `/api/v1/revisions` | List active revision queue |
 | GET | `/api/v1/videos/{id}/revision` | A video's revision state (active, due date, last revised) |

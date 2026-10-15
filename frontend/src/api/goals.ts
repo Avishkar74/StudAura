@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { Goal } from './types'
+import type { Goal, PathDeadline } from './types'
 
 /** `timezone` says which day to count before a goal exists; a saved goal keeps its own. */
 export function getGoal(timezone: string) {
@@ -30,4 +30,11 @@ export function postViewingSession(body: ViewingSessionPing, opts: { keepalive?:
     body: JSON.stringify(body),
     keepalive: opts.keepalive,
   })
+}
+
+/** Paths with a target date and videos still to complete, soonest first. */
+export function getDeadlines(timezone: string) {
+  return apiFetch<PathDeadline[]>(
+    `/api/v1/goals/deadlines?timezone=${encodeURIComponent(timezone)}`,
+  )
 }

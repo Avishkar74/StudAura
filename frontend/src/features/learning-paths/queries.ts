@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createPath, listPaths, type CreatePathInput } from '@/api/paths'
+import type { PathSort } from '@/api/types'
 import { importVideo } from '@/api/videos'
 
 export const pathKeys = {
@@ -12,6 +13,14 @@ export function useLearningPaths() {
   return useQuery({
     queryKey: pathKeys.list('recent'),
     queryFn: () => listPaths({ sort: 'recent', limit: 100 }),
+  })
+}
+
+/** The paths page: every path, sorted, optionally filtered by title. */
+export function usePathList(sort: PathSort, q: string) {
+  return useQuery({
+    queryKey: ['learning-paths', 'page', sort, q],
+    queryFn: () => listPaths({ sort, q: q || undefined, limit: 100 }),
   })
 }
 

@@ -69,3 +69,21 @@ export function formatDue(dueAt: string, today: string): string {
   })
   return `Due ${date}`
 }
+
+/** "2026-10-20" as "Oct 20, 2026". */
+export function formatDate(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+/** "Mon", "Tue"… for a YYYY-MM-DD calendar day. */
+export function formatWeekday(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
+    weekday: 'short',
+    timeZone: 'UTC',
+  })
+}

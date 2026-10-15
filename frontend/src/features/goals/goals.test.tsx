@@ -22,6 +22,7 @@ function goal(over: Partial<Goal> = {}): Goal {
     today: '2026-10-15',
     today_watched_seconds: 2520,
     week_watched_seconds: 9000,
+    daily: [],
     goal_achieved: false,
     ...over,
   }
