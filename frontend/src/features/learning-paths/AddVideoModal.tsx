@@ -39,9 +39,7 @@ export function AddVideoModal({ onClose, onCreatePath, defaultPathId }: AddVideo
       setResult({ data, pathId: selected })
       setUrl('')
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : 'Could not add the video. Please try again.',
-      )
+      setError(err instanceof ApiError ? err.message : 'Could not add the video. Please try again.')
     }
   }
 
@@ -84,7 +82,10 @@ export function AddVideoModal({ onClose, onCreatePath, defaultPathId }: AddVideo
           <PathPicker id="add-video-path" paths={items} value={selected} onChange={setPathId} />
           <FormError message={error} />
           {result && (
-            <p role="status" className="rounded-lg border border-success bg-surface-2 px-3 py-2 text-sm">
+            <p
+              role="status"
+              className="rounded-lg border border-success bg-surface-2 px-3 py-2 text-sm"
+            >
               {result.data.status === 'added' ? (
                 <>
                   Added <strong>{result.data.video.title}</strong> to {pathTitle}.{' '}

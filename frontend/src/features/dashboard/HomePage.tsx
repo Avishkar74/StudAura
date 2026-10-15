@@ -56,7 +56,11 @@ function Panel({
 
 function Skeleton() {
   return (
-    <div role="status" aria-label="Loading your dashboard" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div
+      role="status"
+      aria-label="Loading your dashboard"
+      className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+    >
       {[0, 1, 2, 3].map((i) => (
         <div key={i} className="h-44 animate-pulse rounded-xl border border-border bg-surface-1" />
       ))}
@@ -134,12 +138,7 @@ export function HomePage() {
               value={String(completedVideos)}
               caption={`out of ${totalVideos} videos`}
             />
-            <MetricCard
-              icon={Clock}
-              label="Learning Time"
-              value="—"
-              caption="Not tracked yet"
-            />
+            <MetricCard icon={Clock} label="Learning Time" value="—" caption="Not tracked yet" />
             <MetricCard
               icon={RotateCcw}
               label="Needs Revision"
@@ -153,7 +152,10 @@ export function HomePage() {
               <h2 id="continue-heading" className="text-xl font-semibold">
                 Continue Learning
               </h2>
-              <Link to="/learning-paths" className="text-sm text-text-secondary hover:text-text-primary">
+              <Link
+                to="/learning-paths"
+                className="text-sm text-text-secondary hover:text-text-primary"
+              >
                 View all
               </Link>
             </div>
@@ -175,7 +177,8 @@ export function HomePage() {
             </Panel>
             <Panel title="Upcoming Revisions" icon={RotateCcw}>
               <p className="text-sm text-text-secondary">
-                You&apos;re all caught up. Mark a video for revision whenever you want to revisit it.
+                You&apos;re all caught up. Mark a video for revision whenever you want to revisit
+                it.
               </p>
             </Panel>
             <Panel title="Recent Activity" icon={Clock}>

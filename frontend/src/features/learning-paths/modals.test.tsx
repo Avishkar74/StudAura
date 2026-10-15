@@ -38,7 +38,9 @@ describe('Create learning path dialog', () => {
     await user.click(screen.getByRole('button', { name: 'Create path' }))
 
     await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: 'Create learning path' })).not.toBeInTheDocument(),
+      expect(
+        screen.queryByRole('dialog', { name: 'Create learning path' }),
+      ).not.toBeInTheDocument(),
     )
     expect(screen.getByTestId('location')).toHaveTextContent('/learning-paths/new-1')
     const post = api.calls.find((c) => c.method === 'POST')!
@@ -184,7 +186,10 @@ describe('Add YouTube video dialog', () => {
     })
     renderApp()
     const user = await openFromAddMenu('Add YouTube Video')
-    await user.type(await screen.findByLabelText('YouTube video link'), 'https://youtu.be/dQw4w9WgXcQ')
+    await user.type(
+      await screen.findByLabelText('YouTube video link'),
+      'https://youtu.be/dQw4w9WgXcQ',
+    )
     await user.click(screen.getByRole('button', { name: 'Add video' }))
     expect(await screen.findByRole('status')).toHaveTextContent('is already in Algorithms')
   })
@@ -205,7 +210,10 @@ describe('Add YouTube video dialog', () => {
     })
     renderApp()
     const user = await openFromAddMenu('Add YouTube Video')
-    await user.type(await screen.findByLabelText('YouTube video link'), 'https://youtu.be/dQw4w9WgXcQ')
+    await user.type(
+      await screen.findByLabelText('YouTube video link'),
+      'https://youtu.be/dQw4w9WgXcQ',
+    )
     await user.click(screen.getByRole('button', { name: 'Add video' }))
     expect(await screen.findByRole('status')).toHaveTextContent('disabled embedding')
   })
@@ -227,7 +235,10 @@ describe('Add YouTube video dialog', () => {
     })
     renderApp()
     const user = await openFromAddMenu('Add YouTube Video')
-    await user.type(await screen.findByLabelText('YouTube video link'), 'https://youtu.be/privateVid1')
+    await user.type(
+      await screen.findByLabelText('YouTube video link'),
+      'https://youtu.be/privateVid1',
+    )
     await user.click(screen.getByRole('button', { name: 'Add video' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('private, removed or unavailable')
