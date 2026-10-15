@@ -51,7 +51,8 @@ docker compose exec backend pytest                    # backend tests (DB tests 
 docker compose exec backend sh -c "ruff check . && ruff format --check . && mypy app alembic"
 docker compose down -v                                # stop and wipe the local DB
 
-cd frontend && npm install
+cd frontend && nvm use        # Node 24 (see .nvmrc); npm refuses to install on other versions
+npm install
 npm run dev | test | lint | typecheck | build
 ```
 

@@ -16,13 +16,45 @@ push to main ──► backend ─┐
 | Job | Runs on | What it does |
 |---|---|---|
 | `backend` | PR, main | `ruff check`, `ruff format --check`, `mypy .`, `pytest` against a real PostgreSQL 16 service. That includes the Alembic migration test (upgrade from an empty database). The job **fails if any test is skipped**, because a skip would mean the database was not reached. |
-| `frontend` | PR, main | `npm ci`, `eslint`, `prettier --check`, `tsc`, `vitest`, `vite build`. |
+| `frontend` | PR, main | Node from `frontend/.nvmrc`, then `npm ci`, `eslint`, `prettier --check`, `tsc`, `vitest`, `vite build`. |
 | `images` (backend, frontend) | PR, main | Builds the production image (backend `runtime` stage, frontend `prod` stage), checks it runs as a non-root user, starts it and smoke-tests it: backend `GET /health`, `/metrics`, and `/ready` answering 503 with no database; frontend `/healthz`, `/` and a deep link falling back to the SPA. |
 | `publish` (backend, frontend) | main only, after the three above | Builds, scans with Trivy, then pushes `ghcr.io/<owner>/studaura-backend` and `studaura-frontend`, tagged with the commit SHA and `latest`. |
 
 Third-party actions are pinned to commit SHAs (the version is in a comment). Jobs get read-only
 `contents` access; only `publish` gets `packages: write`, and pull requests never reach it.
 `.github/dependabot.yml` opens weekly PRs for actions, Python and npm dependencies and base images.
+
+## Node version
+
+The frontend needs **Node 24.15 or newer on the 24 line** (or 26+). That comes from the locked
+dependencies, not a preference: `jsdom` needs `^22.22.2 || ^24.15.0 || >=26`, `undici` needs
+`>=22.19`, `vitest` needs `^22.12 || ^24 || >=26`, and `@supabase/*` and
+`@testing-library/jest-dom` need 22 or newer. On Node 20 Vitest starts zero tests and its workers
+crash with `Cannot read properties of undefined (reading 'bind')` inside undici.
+
+The version lives in three places that must move together:
+
+| Where | Setting |
+|---|---|
+| `frontend/.nvmrc` | `24` (read by `actions/setup-node` and `nvm`) |
+| `frontend/package.json` | `"engines": { "node": "^24.15.0 \|\| >=26.0.0" }` |
+| `frontend/Dockerfile` | `FROM node:24-alpine` |
+
+`frontend/.npmrc` sets `engine-strict=true`, so `npm ci` fails immediately, naming the package,
+when Node is too old, instead of failing later in the test runner. `@types/node` stays on the
+same major as the runtime.
+
+## Dependency updates
+
+Dependabot (`.github/dependabot.yml`) groups packages that must move together into a single pull
+request: `react` / `react-dom` / `@types/react` / `@types/react-dom`, all `@tiptap/*`, Tailwind,
+ESLint and its plugins, and Vitest with jsdom and Testing Library.
+
+The app is on **React 18**. Major updates of the four React packages are ignored on purpose: React
+19 is a migration of all four together, not a bot bump. When you decide to migrate, delete the
+four `ignore` entries for them, take the single `react` group pull request, and fix any type or
+API errors in that same PR. FastAPI is likewise held below 0.136 until
+`prometheus-fastapi-instrumentator` supports newer releases.
 
 ## Trivy policy
 

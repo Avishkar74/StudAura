@@ -712,7 +712,7 @@ Configure `CORS_ORIGINS` as an explicit allowlist. Do not use `*` in production.
 ### 11.5 Container Security
 
 - Run containers as non-root users.
-- Use minimal base images (e.g. `python:3.12-slim`, `node:20-alpine`).
+- Use minimal base images (e.g. `python:3.12-slim`, `node:24-alpine`).
 - Use `.dockerignore` to exclude `node_modules`, `.env`, `.git`, test caches.
 - Run Trivy on both images in CI. Define severity policy before first publish.
 
@@ -753,7 +753,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 **Frontend:**
 ```dockerfile
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json .
 RUN npm ci
