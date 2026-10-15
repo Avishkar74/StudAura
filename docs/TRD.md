@@ -400,6 +400,7 @@ CREATE TABLE saved_videos (
 | PUT | `/api/v1/goals` | Create/update daily goal |
 | POST | `/api/v1/viewing-sessions` | Record/update a viewing session |
 | GET | `/api/v1/revisions` | List active revision queue |
+| GET | `/api/v1/videos/{id}/revision` | A video's revision state (active, due date, last revised) |
 | PUT | `/api/v1/videos/{id}/revision` | Flag / reschedule revision (idempotent) |
 | POST | `/api/v1/videos/{id}/revision/complete` | Mark revised |
 | GET | `/api/v1/notes` | Notes index across all paths |

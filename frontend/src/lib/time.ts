@@ -44,3 +44,28 @@ export function formatDuration(totalSeconds: number): string {
   if (h === 0) return `${m} min`
   return m === 0 ? `${h} h` : `${h} h ${m} min`
 }
+
+const DAY_MS = 24 * 3600 * 1000
+
+function dayNumber(iso: string): number {
+  return Math.floor(Date.parse(`${iso}T00:00:00Z`) / DAY_MS)
+}
+
+/** "2026-10-15" plus 3 days is "2026-10-18". Calendar arithmetic, so no timezone surprises. */
+export function addDays(iso: string, days: number): string {
+  return new Date((dayNumber(iso) + days) * DAY_MS).toISOString().slice(0, 10)
+}
+
+/** "Due today", "Due tomorrow", "Due Oct 20" or "Overdue by 3 days". Both dates are YYYY-MM-DD. */
+export function formatDue(dueAt: string, today: string): string {
+  const diff = dayNumber(dueAt) - dayNumber(today)
+  if (diff < 0) return `Overdue by ${-diff} ${diff === -1 ? 'day' : 'days'}`
+  if (diff === 0) return 'Due today'
+  if (diff === 1) return 'Due tomorrow'
+  const date = new Date(`${dueAt}T00:00:00Z`).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+  return `Due ${date}`
+}

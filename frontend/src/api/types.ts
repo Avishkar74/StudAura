@@ -94,6 +94,41 @@ export interface Goal {
   goal_achieved: boolean
 }
 
+export type DueState = 'overdue' | 'due_today' | 'upcoming'
+
+/** A video's revision state. `active` is false when it is not in the revision queue. */
+export interface RevisionState {
+  video_id: string
+  learning_status: LearningStatus
+  active: boolean
+  due_at: string | null
+  flagged_at: string | null
+  /** When it was last marked revised, if ever. */
+  revised_at: string | null
+  due_state: DueState | null
+  /** Today in the student's timezone (YYYY-MM-DD). */
+  today: string
+}
+
+export interface RevisionItem {
+  video_id: string
+  video: VideoMeta
+  /** One of the student's paths that contains the video, for opening it in context. */
+  path: { id: string; title: string } | null
+  due_at: string
+  flagged_at: string
+  due_state: DueState
+}
+
+export interface RevisionQueue {
+  today: string
+  timezone: string
+  total: number
+  /** Items due today or overdue. */
+  due_count: number
+  items: RevisionItem[]
+}
+
 /** One of the caller's own comments on a video. */
 export interface VideoComment {
   id: string
