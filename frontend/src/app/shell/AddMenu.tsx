@@ -4,7 +4,7 @@ import { useDismiss } from '@/hooks/useDismiss'
 import { useShell } from './shellContext'
 
 export function AddMenu() {
-  const { openAddVideo, openCreatePath } = useShell()
+  const { openAddVideo, openCreatePath, openImportPlaylist } = useShell()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const close = useCallback(() => setOpen(false), [])
@@ -49,15 +49,14 @@ export function AddMenu() {
           <button
             role="menuitem"
             type="button"
-            disabled
-            aria-disabled="true"
-            className={`${itemClass} cursor-not-allowed opacity-60 hover:bg-transparent`}
+            className={itemClass}
+            onClick={() => {
+              close()
+              openImportPlaylist()
+            }}
           >
             <ListPlus className="size-4 text-text-secondary" aria-hidden />
-            <span className="flex-1">Import YouTube Playlist</span>
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-text-muted">
-              Soon
-            </span>
+            Import YouTube Playlist
           </button>
           <button
             role="menuitem"
