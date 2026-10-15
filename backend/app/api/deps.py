@@ -1,5 +1,6 @@
 """FastAPI dependencies shared by routers."""
 
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, HTTPException
@@ -8,7 +9,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import unauthorized, verify_supabase_token
+from app.core.settings import settings
 from app.db import get_db
+from app.integrations.youtube.client import HttpYouTubeClient
+from app.integrations.youtube.fake import FakeYouTubeClient
+from app.integrations.youtube.models import YouTubeClient
 from app.models import User
 from app.repositories import users as users_repo
 
@@ -41,3 +46,18 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+@lru_cache
+def _fake_youtube_client() -> FakeYouTubeClient:
+    return FakeYouTubeClient()
+
+
+def get_youtube_client() -> YouTubeClient:
+    """The fixture-backed fake under APP_ENV=test (CI never hits YouTube), else the real API."""
+    if settings.is_test:
+        return _fake_youtube_client()
+    return HttpYouTubeClient(settings.YOUTUBE_DATA_API_KEY)
+
+
+YouTube = Annotated[YouTubeClient, Depends(get_youtube_client)]

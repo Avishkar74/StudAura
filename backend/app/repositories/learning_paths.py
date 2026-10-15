@@ -125,12 +125,14 @@ async def get_path_with_stats(
     return _row(row) if row else None
 
 
-async def get_path(db: AsyncSession, user_id: uuid.UUID, path_id: uuid.UUID) -> LearningPath | None:
-    return (
-        await db.execute(
-            select(LearningPath).where(LearningPath.id == path_id, LearningPath.user_id == user_id)
-        )
-    ).scalar_one_or_none()
+async def get_path(
+    db: AsyncSession, user_id: uuid.UUID, path_id: uuid.UUID, *, for_update: bool = False
+) -> LearningPath | None:
+    """The user's path, optionally row-locked to serialise changes to its video list."""
+    query = select(LearningPath).where(LearningPath.id == path_id, LearningPath.user_id == user_id)
+    if for_update:
+        query = query.with_for_update()
+    return (await db.execute(query)).scalar_one_or_none()
 
 
 async def create_path(

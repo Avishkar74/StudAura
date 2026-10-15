@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 
 from app.api.deps import CurrentUser, DbSession
 from app.repositories import learning_paths as repo
+from app.repositories import videos as videos_repo
 from app.repositories.learning_paths import PathWithStats, SortKey
 from app.schemas.common import Page
 from app.schemas.learning_path import (
@@ -147,3 +148,14 @@ async def list_learning_path_videos(
             )
         )
     return Page(total=total, limit=limit, offset=offset, items=items)
+
+
+@router.delete("/{path_id}/videos/{video_id}", status_code=204)
+async def remove_video_from_path(
+    path_id: uuid.UUID, video_id: uuid.UUID, user: CurrentUser, db: DbSession
+) -> Response:
+    """Remove a video from this path only. Notes, progress and bookmarks are kept."""
+    if not await videos_repo.remove_from_path(db, user.id, path_id, video_id):
+        raise HTTPException(status_code=404, detail="Video not found in this learning path")
+    await db.commit()
+    return Response(status_code=204)
