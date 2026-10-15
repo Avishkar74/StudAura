@@ -35,7 +35,7 @@ Compose always uses its own local Postgres, regardless of `DATABASE_URL` in `.en
 
 ```bash
 docker compose exec backend alembic upgrade head      # apply migrations
-docker compose exec backend pytest                    # backend tests
+docker compose exec backend pytest                    # backend tests (DB tests use the compose db)
 docker compose exec backend sh -c "ruff check . && ruff format --check . && mypy app alembic"
 docker compose down -v                                # stop and wipe the local DB
 
