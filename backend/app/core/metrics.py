@@ -14,4 +14,7 @@ progress_updates_total = Counter(
 completion_events_total = Counter(
     "app_completion_events_total", "Player ENDED events by outcome", ["outcome"]
 )
+viewing_session_pings_total = Counter(
+    "app_viewing_session_pings_total", "Viewing-time pings by outcome", ["outcome"]
+)
 db_readiness = Gauge("db_readiness", "1 if the database is reachable, else 0")
