@@ -20,3 +20,6 @@ def configure_logging() -> None:
     )
     # Uvicorn access logs include full URLs; the instrumentator already covers request metrics.
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    # httpx logs every outbound request URL at INFO, which would include YouTube video IDs.
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)

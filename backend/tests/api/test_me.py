@@ -11,7 +11,8 @@ from app.core import auth as auth_module
 from app.core.jwks import JWKSCache
 from app.core.settings import settings
 from app.models import User
-from tests.api.conftest import EcKey, TokenFactory
+from tests.api.conftest import EcKey
+from tests.api.helpers import TokenFactory
 
 
 def bearer(token: str) -> dict[str, str]:
