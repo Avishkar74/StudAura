@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
     LearningGoal,
+    LearningPath,
     LearningPathVideo,
     RevisionItem,
     User,
@@ -394,6 +395,10 @@ async def test_a_video_in_two_paths_shows_the_oldest_path(
     session.add(
         LearningPathVideo(learning_path_id=uuid.UUID(second["id"]), video_id=video.id, position=1)
     )
+    # The test's requests share one transaction, so give the paths distinct creation times.
+    older = await session.get(LearningPath, uuid.UUID(first["id"]))
+    assert older is not None
+    older.created_at = datetime.now(UTC) - timedelta(days=1)
     await session.flush()
     await flag(auth_client, alice, video)
     item = (await queue(auth_client, alice))["items"][0]
