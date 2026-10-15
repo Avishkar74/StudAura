@@ -7,8 +7,9 @@ import { useMe } from '@/features/auth/queries'
 import { GoalPanel } from '@/features/goals/GoalPanel'
 import { useGoal } from '@/features/goals/queries'
 import { useLearningPaths } from '@/features/learning-paths/queries'
+import { useRevisionQueue } from '@/features/revisions/queries'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { formatDuration, greetingFor } from '@/lib/time'
+import { formatDue, formatDuration, greetingFor } from '@/lib/time'
 import { PathCard } from './PathCard'
 
 function MetricCard({
@@ -56,6 +57,63 @@ function Panel({
   )
 }
 
+/** The most urgent revisions, each opening its video in the workspace (PRD 6.2). */
+function RevisionPreview() {
+  const queue = useRevisionQueue()
+  if (queue.isPending) return <p className="text-sm text-text-secondary">Loading revisions…</p>
+  if (queue.isError) {
+    return (
+      <div role="alert" className="flex flex-col items-start gap-2 text-sm">
+        <p className="text-warning">Couldn&apos;t load your revisions.</p>
+        <Button variant="secondary" onClick={() => void queue.refetch()}>
+          Try again
+        </Button>
+      </div>
+    )
+  }
+  const { items, today, total } = queue.data
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-text-secondary">
+        You&apos;re all caught up. Mark a video for revision whenever you want to revisit it.
+      </p>
+    )
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-2">
+        {items.slice(0, 3).map((item) => (
+          <li key={item.video_id}>
+            <Link
+              to={
+                item.path
+                  ? `/learn/${item.path.id}/${item.video_id}`
+                  : `/learn/saved/${item.video_id}`
+              }
+              className="block rounded-lg bg-surface-2 p-3 hover:bg-surface-3"
+            >
+              <span className="block truncate text-sm font-medium">{item.video.title}</span>
+              <span className="flex items-center justify-between gap-2 text-xs">
+                <span className="truncate text-text-muted">
+                  {item.path?.title ?? 'Saved video'}
+                </span>
+                <span
+                  className={item.due_state === 'overdue' ? 'text-warning' : 'text-text-secondary'}
+                >
+                  {formatDue(item.due_at, today)}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Link to="/revision" className="text-sm text-text-secondary hover:text-text-primary">
+        View all{total > 3 ? ` ${total}` : ''}
+      </Link>
+    </div>
+  )
+}
+
 function Skeleton() {
   return (
     <div
@@ -76,6 +134,7 @@ export function HomePage() {
   const me = useMe()
   const paths = useLearningPaths()
   const goal = useGoal()
+  const revisions = useRevisionQueue()
 
   const items = paths.data?.items ?? []
   const name = me.data?.display_name || me.data?.email.split('@')[0] || ''
@@ -150,8 +209,16 @@ export function HomePage() {
             <MetricCard
               icon={RotateCcw}
               label="Needs Revision"
-              value="—"
-              caption="Not tracked yet"
+              value={revisions.data ? String(revisions.data.total) : '—'}
+              caption={
+                revisions.data
+                  ? revisions.data.total === 0
+                    ? 'all caught up'
+                    : `${revisions.data.due_count} due`
+                  : revisions.isError
+                    ? "Couldn't load"
+                    : 'Loading…'
+              }
             />
           </section>
 
@@ -182,10 +249,7 @@ export function HomePage() {
               <GoalPanel />
             </Panel>
             <Panel title="Upcoming Revisions" icon={RotateCcw}>
-              <p className="text-sm text-text-secondary">
-                You&apos;re all caught up. Mark a video for revision whenever you want to revisit
-                it.
-              </p>
+              <RevisionPreview />
             </Panel>
             <Panel title="Recent Activity" icon={Clock}>
               <p className="text-sm text-text-secondary">

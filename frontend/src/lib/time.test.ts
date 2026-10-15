@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, formatRelative, greetingFor } from './time'
+import { addDays, formatDue, formatDuration, formatRelative, greetingFor } from './time'
 
 const NOW = new Date('2026-10-15T12:00:00Z')
 const ago = (seconds: number) => new Date(NOW.getTime() - seconds * 1000).toISOString()
@@ -48,5 +48,32 @@ describe('formatDuration', () => {
     [-30, '0 min'],
   ])('formats %s seconds as %s', (seconds, expected) => {
     expect(formatDuration(seconds)).toBe(expected)
+  })
+})
+
+describe('addDays', () => {
+  it.each([
+    ['2026-10-15', 1, '2026-10-16'],
+    ['2026-10-31', 1, '2026-11-01'],
+    ['2026-12-31', 1, '2027-01-01'],
+    ['2026-03-01', -1, '2026-02-28'],
+    ['2028-02-28', 1, '2028-02-29'], // leap year
+    ['2026-10-15', 0, '2026-10-15'],
+  ])('%s plus %i days is %s', (from, days, expected) => {
+    expect(addDays(from, days)).toBe(expected)
+  })
+})
+
+describe('formatDue', () => {
+  const today = '2026-10-15'
+  it.each([
+    ['2026-10-12', 'Overdue by 3 days'],
+    ['2026-10-14', 'Overdue by 1 day'],
+    ['2026-10-15', 'Due today'],
+    ['2026-10-16', 'Due tomorrow'],
+    ['2026-10-20', 'Due Oct 20'],
+    ['2027-01-05', 'Due Jan 5'],
+  ])('%s reads %s', (due, expected) => {
+    expect(formatDue(due, today)).toBe(expected)
   })
 })

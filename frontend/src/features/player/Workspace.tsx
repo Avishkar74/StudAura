@@ -1,11 +1,4 @@
-import {
-  ArrowLeft,
-  ArrowRight,
-  CircleCheck,
-  ExternalLink,
-  RotateCcw,
-  TriangleAlert,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, CircleCheck, ExternalLink, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { LearningStatus, PathVideo, VideoDetail } from '@/api/types'
@@ -20,6 +13,8 @@ import { PlayerState, type YTPlayer } from '@/lib/youtube'
 import { pathKeys } from '@/features/learning-paths/queries'
 import { shouldOfferResume } from './resume'
 import { goalKeys } from '@/features/goals/queries'
+import { revisionKeys } from '@/features/revisions/queries'
+import { RevisionControls } from '@/features/revisions/RevisionControls'
 import { usePlaybackTracker } from './usePlaybackTracker'
 import { useViewingTime } from './useViewingTime'
 import { WorkspacePanel } from './WorkspacePanel'
@@ -107,7 +102,11 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
 
   const setLearningStatus = useMutation({
     mutationFn: (learning_status: LearningStatus) => putProgress(video.id, { learning_status }),
-    onSuccess: (saved) => setStatus(saved.learning_status),
+    onSuccess: (saved) => {
+      setStatus(saved.learning_status)
+      // Choosing a status other than Needs Revision takes the video out of the queue.
+      void qc.invalidateQueries({ queryKey: revisionKeys.all })
+    },
   })
 
   // Path pages and the dashboard read progress and today's goal from the cache; refresh them on
@@ -234,15 +233,7 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
               <CircleCheck className="mr-2 size-4" aria-hidden />
               {status === 'COMPLETED' ? 'Completed' : 'Mark completed'}
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setLearningStatus.mutate('NEEDS_REVISION')}
-              disabled={status === 'NEEDS_REVISION' || setLearningStatus.isPending}
-              aria-pressed={status === 'NEEDS_REVISION'}
-            >
-              <RotateCcw className="mr-2 size-4" aria-hidden />
-              Needs revision
-            </Button>
+            <RevisionControls videoId={video.id} title={video.title} onStatus={setStatus} />
           </div>
           {setLearningStatus.isError && (
             <p role="alert" className="text-sm text-warning">

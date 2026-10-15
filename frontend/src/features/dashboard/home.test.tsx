@@ -78,10 +78,11 @@ describe('dashboard', () => {
     expect(summary.getByText('Videos Completed').parentElement).toHaveTextContent(
       'out of 15 videos',
     )
-    // Nothing watched today, and revisions are not tracked yet.
+    // Nothing watched today, and nothing in the revision queue.
     expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('0 min')
     expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('tracked today')
-    expect(summary.getByText('Needs Revision').parentElement).toHaveTextContent('Not tracked yet')
+    expect(summary.getByText('Needs Revision').parentElement).toHaveTextContent('0')
+    expect(summary.getByText('Needs Revision').parentElement).toHaveTextContent('all caught up')
   })
 
   it('renders a card per path with an accessible progress bar', async () => {

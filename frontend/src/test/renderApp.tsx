@@ -42,7 +42,7 @@ type Handler = ApiReply | ((init: RequestInit | undefined, url: string) => ApiRe
  * Unmatched requests get a 404 so a missing stub fails loudly instead of hanging.
  */
 export function mockApi(routes: Record<string, Handler>) {
-  // The dashboard always asks for the daily goal; tests that don't care get "no goal yet".
+  // The dashboard always asks for the daily goal; tests that don't care get "no goal yet"...
   routes = {
     'GET /api/v1/goals': {
       body: {
@@ -51,6 +51,22 @@ export function mockApi(routes: Record<string, Handler>) {
         today: '2026-10-15',
         today_watched_seconds: 0,
         goal_achieved: false,
+      },
+    },
+    // ...and an empty revision queue; a video that is not in it.
+    'GET /api/v1/revisions': {
+      body: { today: '2026-10-15', timezone: 'UTC', total: 0, due_count: 0, items: [] },
+    },
+    'GET /revision': {
+      body: {
+        video_id: 'v',
+        learning_status: 'IN_PROGRESS',
+        active: false,
+        due_at: null,
+        flagged_at: null,
+        revised_at: null,
+        due_state: null,
+        today: '2026-10-15',
       },
     },
     ...routes,

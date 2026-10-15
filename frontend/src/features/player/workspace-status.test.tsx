@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { PathVideo } from '@/api/types'
+import type { PathVideo, RevisionState } from '@/api/types'
 import { PlayerState } from '@/lib/youtube'
 import { FakePlayer, installFakeYouTube, uninstallFakeYouTube } from '@/test/fakeYouTube'
 import { makePath, mockApi, renderApp } from '@/test/renderApp'
@@ -49,6 +49,20 @@ function api(over: Partial<PathVideo>, put: Parameters<typeof mockApi>[0] = {}) 
   })
 }
 
+function revision(over: Partial<RevisionState> = {}): RevisionState {
+  return {
+    video_id: 'v1',
+    learning_status: 'NEEDS_REVISION',
+    active: false,
+    due_at: '2026-10-16',
+    flagged_at: '2026-10-15T10:00:00Z',
+    revised_at: null,
+    due_state: 'upcoming',
+    today: '2026-10-15',
+    ...over,
+  }
+}
+
 const group = () => screen.getByRole('group', { name: 'Learning status' })
 const button = (name: string) => within(group()).getByRole('button', { name })
 
@@ -85,16 +99,56 @@ describe('learning status controls', () => {
     })
   })
 
-  it('flags the video as needing revision', async () => {
+  it('flags the video for revision and shows when it is due', async () => {
     const user = userEvent.setup()
-    api(
+    let active = false
+    const mock = api(
       { learning_status: 'COMPLETED' },
-      { 'PUT /api/v1/videos/v1/progress': { body: { learning_status: 'NEEDS_REVISION' } } },
+      {
+        'PUT /api/v1/videos/v1/revision': () => {
+          active = true
+          return { body: revision({ active: true }) }
+        },
+        'GET /api/v1/videos/v1/revision': () => ({ body: revision({ active }) }),
+      },
     )
     await open()
-    await user.click(button('Needs revision'))
-    await waitFor(() => expect(button('Needs revision')).toBeDisabled())
-    expect(button('Needs revision')).toHaveAttribute('aria-pressed', 'true')
+    await user.click(await within(group()).findByRole('button', { name: 'Needs revision' }))
+
+    expect(await within(group()).findByText(/Needs revision · Due tomorrow/)).toBeInTheDocument()
+    expect(within(group()).getByRole('button', { name: 'Reschedule' })).toBeInTheDocument()
+    expect(within(group()).getByRole('button', { name: 'Mark revised' })).toBeInTheDocument()
+    // The badge follows the server's status.
+    expect(
+      within(screen.getByRole('region', { name: 'Playback progress' })).getByText('Needs Revision'),
+    ).toBeInTheDocument()
+    expect(mock.calls.find((c) => c.method === 'PUT' && c.url.endsWith('/revision'))?.body).toEqual(
+      expect.objectContaining({ timezone: expect.any(String) }),
+    )
+  })
+
+  it('choosing Mark completed takes the video out of the revision queue view', async () => {
+    const user = userEvent.setup()
+    let active = true
+    api(
+      { learning_status: 'NEEDS_REVISION' },
+      {
+        'GET /api/v1/videos/v1/revision': () => ({
+          body: revision({ active, learning_status: active ? 'NEEDS_REVISION' : 'COMPLETED' }),
+        }),
+        'PUT /api/v1/videos/v1/progress': () => {
+          active = false // the server closes the revision when the status changes
+          return { body: { learning_status: 'COMPLETED' } }
+        },
+      },
+    )
+    await open()
+    expect(await within(group()).findByText(/Needs revision · Due tomorrow/)).toBeInTheDocument()
+    await user.click(button('Mark completed'))
+    await waitFor(() =>
+      expect(within(group()).queryByText(/Needs revision · Due/)).not.toBeInTheDocument(),
+    )
+    expect(within(group()).getByRole('button', { name: 'Needs revision' })).toBeInTheDocument()
   })
 
   it('shows an error and leaves the status alone when the change fails', async () => {
