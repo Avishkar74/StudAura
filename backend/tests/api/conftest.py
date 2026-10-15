@@ -2,7 +2,7 @@
 
 import time
 import uuid
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -17,13 +17,12 @@ from app.core.jwks import JWKSCache
 from app.core.settings import settings
 from app.db import get_db
 from app.main import app
+from tests.api.helpers import Actor, TokenFactory
 
 SUPABASE_URL = "https://proj.supabase.co"
 ISSUER = f"{SUPABASE_URL}/auth/v1"
 HS_SECRET = "test-legacy-hs256-secret-0123456789abcdef"
 KID = "test-key-1"
-
-TokenFactory = Callable[..., str]
 
 
 class EcKey:
@@ -119,3 +118,13 @@ async def auth_client(session: AsyncSession, auth_config: None) -> AsyncIterator
             yield c
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture
+def alice(make_token: TokenFactory) -> Actor:
+    return Actor(make_token, "alice")
+
+
+@pytest.fixture
+def bob(make_token: TokenFactory) -> Actor:
+    return Actor(make_token, "bob")
