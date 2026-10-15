@@ -1,10 +1,10 @@
-# LearnFlow — Product Requirements Document
+# StudAura — Product Requirements Document
 
 | Field | Value |
 |---|---|
 | Version | 1.1 — Supabase baseline |
 | Date | 15 October 2026 |
-| Product | LearnFlow |
+| Product | StudAura |
 | Status | Baseline for implementation |
 | Audience | Students who use YouTube videos and playlists to learn |
 | Objective | Focused learning workspace + college DevOps capstone |
@@ -15,11 +15,11 @@
 
 ## 1. Executive Summary
 
-LearnFlow is a dark-only, YouTube-inspired personal learning workspace. Students collect YouTube
+StudAura is a dark-only, YouTube-inspired personal learning workspace. Students collect YouTube
 videos and playlists into learning paths, watch embedded videos, take typed notes linked to each
 video, track playback progress, set daily learning goals, and manage a revision queue.
 
-LearnFlow is not a video-hosting service. It provides a focused organisational layer around
+StudAura is not a video-hosting service. It provides a focused organisational layer around
 YouTube embeds. It must not download videos, scrape YouTube pages, or conceal required player
 elements.
 
@@ -74,7 +74,7 @@ it hard to resume, organise, and revisit material.
 1. Sign up or sign in (Supabase Auth).
 2. Create a learning path or import a YouTube playlist.
 3. Open a video in the learning workspace.
-4. Watch the video while LearnFlow saves playback position.
+4. Watch the video while StudAura saves playback position.
 5. Write notes or add a timestamped comment.
 6. Set or update the video's learning status.
 7. Use the dashboard to continue learning or review due items.
@@ -112,7 +112,7 @@ it hard to resume, organise, and revisit material.
 
 ```
 Global header
-  [☰] [LearnFlow / Home] [Search] [Add ▼] [Profile]
+  [☰] [StudAura / Home] [Search] [Add ▼] [Profile]
 
 Left sidebar (collapsible, persisted)
   Home
@@ -132,7 +132,7 @@ Learning workspace
 
 ### 5.1 Navigation Rules
 
-- LearnFlow logo and Home sidebar item both route to `/` (same destination).
+- StudAura logo and Home sidebar item both route to `/` (same destination).
 - Clicking a path opens its overview; clicking a video inside a path opens the workspace.
 - Navigating to a different path while watching a video closes the current video — no silent replacement.
 - The playlist drawer and Notes/Comments/Progress panel are mutually exclusive on the right side. Closing the drawer restores the previously active tab.
@@ -158,7 +158,7 @@ Purpose: answer "What should I learn next?" — action-oriented, not a dense ana
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ ☰ LearnFlow          Search...          [+ Add]   [User]   │
+│ ☰ StudAura          Search...          [+ Add]   [User]   │
 ├──────────────┬──────────────────────────────────────────────┤
 │ Home         │ Good evening, [Name]                        │
 │ All Paths    │ Continue building your learning streak.      │
@@ -490,7 +490,7 @@ A NEEDS_REVISION video counts as completed only if `ever_completed_at IS NOT NUL
 
 ## 13. DevOps Capstone Alignment
 
-| Rubric module | How LearnFlow supports it |
+| Rubric module | How StudAura supports it |
 |---|---|
 | Frontend + Backend + Database (10) | React UI, FastAPI REST API, Supabase PostgreSQL, Alembic migrations. |
 | Testing + Code Quality (10) | Pytest + Vitest, integration tests, migration tests, linting. |

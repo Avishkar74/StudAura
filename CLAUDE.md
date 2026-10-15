@@ -1,6 +1,6 @@
-# CLAUDE.md — LearnFlow
+# CLAUDE.md — StudAura
 
-LearnFlow is a dark-only YouTube-inspired personal learning workspace. Students organise YouTube
+StudAura is a dark-only YouTube-inspired personal learning workspace. Students organise YouTube
 videos and playlists into learning paths, watch embedded videos, take typed notes, track playback
 progress, set daily goals, and manage revision queues. It is also a college DevOps capstone; the
 full delivery pipeline (Docker, CI, EKS, Helm, Prometheus, Grafana) is a first-class requirement.
@@ -91,7 +91,7 @@ These apply to every file Claude Code writes. Do not deviate.
    never calls the YouTube Data API directly. The YouTube IFrame Player API (client-side embed)
    is the only YouTube API the frontend uses.
 
-5. **No video downloads or scraping.** LearnFlow never downloads, transcodes, proxies, or
+5. **No video downloads or scraping.** StudAura never downloads, transcodes, proxies, or
    rehouses YouTube video bytes. It stores video identifiers and permitted metadata only.
 
 6. **Separate playback progress from learning status.** `last_position_seconds` and
@@ -151,7 +151,7 @@ Delivery:
 ## Repository structure
 
 ```
-learnflow/
+studaura/
 ├── CLAUDE.md                    ← this file
 ├── docs/
 │   ├── PRD.md
@@ -194,7 +194,7 @@ learnflow/
 │   ├── Dockerfile
 │   └── pyproject.toml
 ├── deploy/
-│   ├── helm/learnflow/
+│   ├── helm/studaura/
 │   ├── terraform/
 │   ├── prometheus/
 │   └── grafana/
