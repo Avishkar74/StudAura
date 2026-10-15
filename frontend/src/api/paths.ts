@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { LearningPath, Page, PathSort } from './types'
+import type { LearningPath, Page, PathSort, PathVideo } from './types'
 
 const BASE = '/api/v1/learning-paths'
 
@@ -24,4 +24,12 @@ export function createPath(input: CreatePathInput) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   })
+}
+
+export function getPath(pathId: string) {
+  return apiFetch<LearningPath>(`${BASE}/${pathId}`)
+}
+
+export function listPathVideos(pathId: string) {
+  return apiFetch<Page<PathVideo>>(`${BASE}/${pathId}/videos?limit=500`)
 }
