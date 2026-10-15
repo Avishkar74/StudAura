@@ -13,6 +13,8 @@ class GoalRead(BaseModel):
     timezone: str
     today: date
     today_watched_seconds: int
+    # The last seven days including today, each counted in the same timezone.
+    week_watched_seconds: int
     goal_achieved: bool
 
 

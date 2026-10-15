@@ -7,7 +7,7 @@ from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import LearningPath, LearningPathVideo, RevisionItem, Video
+from app.models import RevisionItem, Video
 
 MAX_QUEUE_ITEMS = 500
 
@@ -118,21 +118,3 @@ async def list_active(
         )
     ).all()
     return [(item, video) for item, video in rows], int(total)
-
-
-async def paths_for_videos(
-    db: AsyncSession, user_id: uuid.UUID, video_ids: list[uuid.UUID]
-) -> dict[uuid.UUID, tuple[uuid.UUID, str]]:
-    """For each video, one of the user's own paths that contains it (the oldest path)."""
-    if not video_ids:
-        return {}
-    rows = (
-        await db.execute(
-            select(LearningPathVideo.video_id, LearningPath.id, LearningPath.title)
-            .join(LearningPath, LearningPath.id == LearningPathVideo.learning_path_id)
-            .where(LearningPath.user_id == user_id, LearningPathVideo.video_id.in_(video_ids))
-            .order_by(LearningPath.created_at.desc(), LearningPath.id.desc())
-        )
-    ).all()
-    # Later rows overwrite earlier ones, so the oldest path wins.
-    return {video_id: (path_id, title) for video_id, path_id, title in rows}

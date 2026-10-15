@@ -10,9 +10,9 @@ from app.core.metrics import revision_events_total
 from app.models import RevisionItem, Video
 from app.repositories import progress as progress_repo
 from app.repositories import revisions as revisions_repo
-from app.schemas.learning_path import PathVideoMeta
+from app.repositories import videos as videos_repo
+from app.schemas.learning_path import PathRef, PathVideoMeta
 from app.schemas.revisions import (
-    PathRef,
     RevisionItemRead,
     RevisionQueue,
     RevisionRead,
@@ -75,7 +75,7 @@ async def list_revisions(
     tz_name, tz = await resolve_timezone(db, user, timezone)
     today = goal_rules.today_in(tz, datetime.now(UTC))
     rows, total = await revisions_repo.list_active(db, user.id)
-    paths = await revisions_repo.paths_for_videos(db, user.id, [v.id for _, v in rows])
+    paths = await videos_repo.paths_for_videos(db, user.id, [v.id for _, v in rows])
     items = [
         RevisionItemRead(
             video_id=video.id,

@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from zoneinfo import ZoneInfo
 
@@ -27,11 +27,14 @@ async def _summary(
     today = goal_rules.today_in(tz, now)
     start, end = goal_rules.local_day_bounds(tz, today)
     watched = await goals_repo.watched_seconds_between(db, user.id, start, end)
+    week_start, _ = goal_rules.local_day_bounds(tz, today - timedelta(days=6))
+    week = await goals_repo.watched_seconds_between(db, user.id, week_start, end)
     return GoalRead(
         daily_target_minutes=target,
         timezone=tz_name,
         today=today,
         today_watched_seconds=watched,
+        week_watched_seconds=week,
         goal_achieved=goal_rules.goal_achieved(target, watched),
     )
 

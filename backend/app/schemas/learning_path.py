@@ -85,3 +85,10 @@ class PathVideoRead(BaseModel):
     playback_pct: float | None
     ever_completed_at: datetime | None
     last_watched_at: datetime | None
+
+
+class PathRef(BaseModel):
+    """A path named by id and title, for "open this video in its path" links."""
+
+    id: uuid.UUID
+    title: str

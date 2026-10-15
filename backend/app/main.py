@@ -4,6 +4,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.v1 import (
     comments,
+    dashboard,
     goals,
     health,
     learning_paths,
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(playlists.router)
     app.include_router(notes.router)
     app.include_router(comments.router)
+    app.include_router(dashboard.router)
     app.include_router(goals.router)
     app.include_router(revisions.router)
     app.include_router(viewing_sessions.router)

@@ -80,7 +80,7 @@ describe('dashboard', () => {
     )
     // Nothing watched today, and nothing in the revision queue.
     expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('0 min')
-    expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('tracked today')
+    expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('0 min this week')
     expect(summary.getByText('Needs Revision').parentElement).toHaveTextContent('0')
     expect(summary.getByText('Needs Revision').parentElement).toHaveTextContent('all caught up')
   })
@@ -108,7 +108,7 @@ describe('dashboard', () => {
     })
     renderApp()
 
-    const section = within(await screen.findByRole('region', { name: 'Continue Learning' }))
+    const section = within(await screen.findByRole('region', { name: 'Your Learning Paths' }))
     const bar = section.getByRole('progressbar', { name: 'Algorithms progress' })
     expect(bar).toHaveAttribute('aria-valuenow', '40')
     expect(section.getByText('4 / 10 completed')).toBeInTheDocument()

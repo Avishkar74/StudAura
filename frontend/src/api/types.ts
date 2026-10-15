@@ -91,7 +91,26 @@ export interface Goal {
   timezone: string
   today: string
   today_watched_seconds: number
+  /** The last seven days including today. */
+  week_watched_seconds: number
   goal_achieved: boolean
+}
+
+/** A video the student has watched, with their progress and a path to open it in. */
+export interface LearningItem {
+  video_id: string
+  video: VideoMeta
+  path: { id: string; title: string } | null
+  learning_status: LearningStatus
+  last_position_seconds: number
+  playback_pct: number | null
+  last_watched_at: string
+}
+
+export interface DashboardLearning {
+  /** The latest video still In Progress that can be played, or null. */
+  continue_learning: LearningItem | null
+  recently_watched: LearningItem[]
 }
 
 export type DueState = 'overdue' | 'due_today' | 'upcoming'

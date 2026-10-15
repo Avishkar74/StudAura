@@ -12,6 +12,7 @@ import { formatRelative, formatTimestamp } from '@/lib/time'
 import { PlayerState, type YTPlayer } from '@/lib/youtube'
 import { pathKeys } from '@/features/learning-paths/queries'
 import { shouldOfferResume } from './resume'
+import { dashboardKeys } from '@/features/dashboard/queries'
 import { goalKeys } from '@/features/goals/queries'
 import { revisionKeys } from '@/features/revisions/queries'
 import { RevisionControls } from '@/features/revisions/RevisionControls'
@@ -115,6 +116,7 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
     return () => {
       void qc.invalidateQueries({ queryKey: pathKeys.all })
       void qc.invalidateQueries({ queryKey: goalKeys.all })
+      void qc.invalidateQueries({ queryKey: dashboardKeys.all })
     }
   }, [qc])
 
