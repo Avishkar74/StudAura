@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react'
 export interface ShellActions {
   openCreatePath: () => void
   openAddVideo: (defaultPathId?: string) => void
+  openImportPlaylist: (defaultPathId?: string) => void
 }
 
 export const ShellContext = createContext<ShellActions | null>(null)

@@ -2,13 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AddVideoModal } from '@/features/learning-paths/AddVideoModal'
 import { CreatePathModal } from '@/features/learning-paths/CreatePathModal'
+import { PlaylistImportModal } from '@/features/learning-paths/PlaylistImportModal'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { usePersistentState } from '@/hooks/usePersistentState'
 import { Header } from './shell/Header'
 import { Sidebar } from './shell/Sidebar'
 import { ShellContext, type ShellActions } from './shell/shellContext'
 
-type Dialog = { kind: 'create-path' } | { kind: 'add-video'; pathId?: string } | null
+type Dialog =
+  | { kind: 'create-path' }
+  | { kind: 'add-video'; pathId?: string }
+  | { kind: 'import-playlist'; pathId?: string }
+  | null
 
 /**
  * Header + sidebar + page outlet.
@@ -46,6 +51,7 @@ export function AppShell() {
     () => ({
       openCreatePath: () => setDialog({ kind: 'create-path' }),
       openAddVideo: (pathId) => setDialog({ kind: 'add-video', pathId }),
+      openImportPlaylist: (pathId) => setDialog({ kind: 'import-playlist', pathId }),
     }),
     [],
   )
@@ -96,6 +102,13 @@ export function AppShell() {
       </div>
 
       {dialog?.kind === 'create-path' && <CreatePathModal onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'import-playlist' && (
+        <PlaylistImportModal
+          defaultPathId={dialog.pathId}
+          onClose={() => setDialog(null)}
+          onCreatePath={() => setDialog({ kind: 'create-path' })}
+        />
+      )}
       {dialog?.kind === 'add-video' && (
         <AddVideoModal
           defaultPathId={dialog.pathId}

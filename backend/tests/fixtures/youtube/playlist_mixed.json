@@ -1,0 +1,79 @@
+{
+  "kind": "youtube#playlistItemListResponse",
+  "items": [
+    {
+      "kind": "youtube#playlistItem",
+      "snippet": {
+        "title": "Binary Search - Complete Tutorial",
+        "position": 0,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "dQw4w9WgXcQ"
+        }
+      },
+      "contentDetails": {
+        "videoId": "dQw4w9WgXcQ"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "snippet": {
+        "title": "Private video",
+        "position": 1,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "privateVid1"
+        }
+      },
+      "contentDetails": {
+        "videoId": "privateVid1"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "snippet": {
+        "title": "Arrays and Linked Lists",
+        "position": 2,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "arrayVid001"
+        }
+      },
+      "contentDetails": {
+        "videoId": "arrayVid001"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "snippet": {
+        "title": "Restricted Lecture",
+        "position": 3,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "embedOff123"
+        }
+      },
+      "contentDetails": {
+        "videoId": "embedOff123"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "snippet": {
+        "title": "Sorting Algorithms",
+        "position": 4,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "sortingVid1"
+        }
+      },
+      "contentDetails": {
+        "videoId": "sortingVid1"
+      }
+    }
+  ],
+  "pageInfo": {
+    "totalResults": 5,
+    "resultsPerPage": 50
+  }
+}

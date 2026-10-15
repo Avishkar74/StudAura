@@ -25,12 +25,23 @@ export function Modal({ title, description, onClose, children }: ModalProps) {
     return () => opener?.focus?.()
   }, [])
 
+  // Escape closes from anywhere. A document listener (not onKeyDown) keeps this working after
+  // the focused control disappears, e.g. when a form is replaced by a result.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Browsers do not fire blur when a focused element is removed, so check after every render:
+  // if focus is no longer inside the dialog (e.g. a form was replaced by its result), pull it
+  // back in rather than leaving it on the page behind.
+  useEffect(() => {
+    const el = panel.current
+    if (el && !el.contains(document.activeElement)) el.focus()
+  })
+
   function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.stopPropagation()
-      onClose()
-      return
-    }
     if (e.key !== 'Tab' || !panel.current) return
     const items = Array.from(panel.current.querySelectorAll<HTMLElement>(FOCUSABLE))
     if (items.length === 0) return
@@ -56,6 +67,7 @@ export function Modal({ title, description, onClose, children }: ModalProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
+        tabIndex={-1}
         onKeyDown={onKeyDown}
         className="max-h-full w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-surface-3 p-5 shadow-2xl sm:rounded-2xl"
       >

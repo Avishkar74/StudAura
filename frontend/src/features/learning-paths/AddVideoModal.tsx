@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { Modal } from '@/components/Modal'
 import { TextField } from '@/components/TextField'
 import { FormError } from '@/features/auth/AuthCard'
+import { PathPicker } from './PathPicker'
 import { useImportVideo, useLearningPaths } from './queries'
 
 interface AddVideoModalProps {
@@ -80,23 +81,7 @@ export function AddVideoModal({ onClose, onCreatePath, defaultPathId }: AddVideo
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="add-video-path" className="text-sm font-medium text-text-secondary">
-              Learning path
-            </label>
-            <select
-              id="add-video-path"
-              value={selected}
-              onChange={(e) => setPathId(e.target.value)}
-              className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-text-primary"
-            >
-              {items.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
-          </div>
+          <PathPicker id="add-video-path" paths={items} value={selected} onChange={setPathId} />
           <FormError message={error} />
           {result && (
             <p role="status" className="rounded-lg border border-success bg-surface-2 px-3 py-2 text-sm">

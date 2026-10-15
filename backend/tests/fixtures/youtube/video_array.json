@@ -1,0 +1,42 @@
+{
+  "kind": "youtube#videoListResponse",
+  "items": [
+    {
+      "kind": "youtube#video",
+      "id": "arrayVid001",
+      "snippet": {
+        "title": "Arrays and Linked Lists",
+        "channelTitle": "Example Academy",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/arrayVid001/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/arrayVid001/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/arrayVid001/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        }
+      },
+      "contentDetails": {
+        "duration": "PT28M10S"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "embeddable": true
+      }
+    }
+  ],
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 1
+  }
+}

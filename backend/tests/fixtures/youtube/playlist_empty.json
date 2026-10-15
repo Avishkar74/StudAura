@@ -1,0 +1,8 @@
+{
+  "kind": "youtube#playlistItemListResponse",
+  "items": [],
+  "pageInfo": {
+    "totalResults": 0,
+    "resultsPerPage": 50
+  }
+}
