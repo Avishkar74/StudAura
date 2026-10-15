@@ -155,6 +155,13 @@ jobs:
           curl -fsS http://localhost:8080/ | grep -q 'id="root"'
           # A deep link falls back to the single-page app.
           curl -fsS http://localhost:8080/learn/some/deep/link | grep -q 'id="root"'
+          # The security headers must reach the page and the assets, not just the server block.
+          for path in / /learn/some/deep/link; do
+            headers="$(curl -fsS -D - -o /dev/null "http://localhost:8080$path")"
+            echo "$headers" | grep -qi '^x-content-type-options: nosniff'
+            echo "$headers" | grep -qi '^x-frame-options: DENY'
+            echo "$headers" | grep -qi '^referrer-policy: strict-origin-when-cross-origin'
+          done
       - name: Container logs
         if: failure()
         run: docker logs smoke || true

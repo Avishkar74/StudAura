@@ -17,7 +17,7 @@ push to main ──► backend ─┐
 |---|---|---|
 | `backend` | PR, main | `ruff check`, `ruff format --check`, `mypy .`, `pytest` against a real PostgreSQL 16 service. That includes the Alembic migration test (upgrade from an empty database). The job **fails if any test is skipped**, because a skip would mean the database was not reached. |
 | `frontend` | PR, main | Node from `frontend/.nvmrc`, then `npm ci`, `eslint`, `prettier --check`, `tsc`, `vitest`, `vite build`. |
-| `images` (backend, frontend) | PR, main | Builds the production image (backend `runtime` stage, frontend `prod` stage), checks it runs as a non-root user, starts it and smoke-tests it: backend `GET /health`, `/metrics`, and `/ready` answering 503 with no database; frontend `/healthz`, `/` and a deep link falling back to the SPA. |
+| `images` (backend, frontend) | PR, main | Builds the production image (backend `runtime` stage, frontend `prod` stage), checks it runs as a non-root user, starts it and smoke-tests it: backend `GET /health`, `/metrics`, and `/ready` answering 503 with no database; frontend `/healthz`, `/`, a deep link falling back to the SPA, and the security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) on the page. |
 | `publish` (backend, frontend) | main only, after the three above | Builds, scans with Trivy, then pushes `ghcr.io/<owner>/studaura-backend` and `studaura-frontend`, tagged with the commit SHA and `latest`. |
 
 Third-party actions are pinned to commit SHAs (the version is in a comment). Jobs get read-only
@@ -68,6 +68,18 @@ API errors in that same PR. FastAPI is likewise held below 0.136 until
 Each image gets two reports, kept for 30 days as the `trivy-backend` and `trivy-frontend`
 artifacts: `trivy-<image>.json` (machine-readable, every severity) and `trivy-<image>.txt`
 (readable, HIGH and CRITICAL).
+
+When the gate fails, the usual cause is an out-of-date base image, not our code. Check the table in the
+failed step: a CRITICAL in an OS package (`libssl3`, `zlib`, …) with a "Fixed Version" means the base
+image needs a newer tag. Keep base images on maintained lines (`node:24-alpine`,
+`nginx-unprivileged:1.30-alpine`, `python:3.12-slim`), because Alpine and Debian fixes only reach images
+that are rebuilt on a current tag. Dependabot proposes base image bumps weekly. You can scan an image
+locally the same way CI does:
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
+  image --severity CRITICAL --ignore-unfixed studaura-frontend:local
+```
 
 If a CRITICAL has no practical fix, add an entry with a reason and an expiry date to a
 `.trivyignore` file and pass it to the Trivy steps with `trivyignores:`. Do not widen the policy
