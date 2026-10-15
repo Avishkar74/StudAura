@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Response
 from app.api.deps import CurrentUser, DbSession, YouTube
 from app.api.youtube_errors import to_api_error
 from app.core.errors import ApiError
-from app.core.metrics import progress_updates_total
+from app.core.metrics import completion_events_total, progress_updates_total
 from app.integrations.youtube.errors import YouTubeError
 from app.models import Video, VideoProgress
 from app.repositories import progress as progress_repo
@@ -137,6 +137,9 @@ async def put_progress(
     The position is clamped to the video's duration when known. Playback alone starts a
     not-started video but never completes it or changes a revision flag. `ever_completed_at`
     is set the first time a student marks a video completed and is never cleared.
+
+    `playback_ended` reports the player's ENDED event. It completes the video only when the
+    session was not seeked and the position is at the end; otherwise status is left unchanged.
     """
     video = await progress_repo.get_accessible_video(db, user.id, video_id)
     if video is None:
@@ -159,6 +162,14 @@ async def put_progress(
         status, ever_completed_at = progress_rules.apply_manual_status(
             status, ever_completed_at, body.learning_status, now
         )
+    completion_outcome: str | None = None
+    if body.playback_ended:
+        if progress_rules.reached_the_end(position, video.duration_seconds):
+            status, ever_completed_at, completion_outcome = progress_rules.apply_completion_event(
+                status, ever_completed_at, bool(body.session_seeked), now
+            )
+        else:
+            completion_outcome = "not_at_end"
 
     saved = await progress_repo.upsert_progress(
         db,
@@ -171,4 +182,6 @@ async def put_progress(
     )
     await db.commit()
     progress_updates_total.labels(outcome="clamped" if clamped else "updated").inc()
+    if completion_outcome is not None:
+        completion_events_total.labels(outcome=completion_outcome).inc()
     return ProgressRead(video_id=video.id, **_progress_fields(video, saved))

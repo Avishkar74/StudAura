@@ -34,9 +34,18 @@ class ProgressUpdate(BaseModel):
 
     last_position_seconds: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     learning_status: LearningStatus | None = None
+    # The player reported ENDED. Needs the final position and says whether the student skipped
+    # around during this viewing; the server decides whether that completes the video.
+    playback_ended: bool = False
+    session_seeked: bool | None = None
 
     @model_validator(mode="after")
     def _something_to_update(self) -> Self:
+        if self.playback_ended:
+            if self.last_position_seconds is None or self.session_seeked is None:
+                raise ValueError("playback_ended needs last_position_seconds and session_seeked")
+            if self.learning_status is not None:
+                raise ValueError("send a manual status separately from playback_ended")
         if self.last_position_seconds is None and self.learning_status is None:
             raise ValueError("send last_position_seconds, learning_status, or both")
         if self.last_position_seconds is not None and not math.isfinite(self.last_position_seconds):

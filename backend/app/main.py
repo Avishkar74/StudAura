@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api.v1 import health, learning_paths, me, notes, playlists, videos
+from app.api.v1 import comments, health, learning_paths, me, notes, playlists, videos
 from app.core.errors import install_error_handlers
 from app.core.logging import configure_logging
 from app.core.settings import settings
@@ -27,6 +27,7 @@ def create_app() -> FastAPI:
     app.include_router(videos.router)
     app.include_router(playlists.router)
     app.include_router(notes.router)
+    app.include_router(comments.router)
 
     # HTTP metrics labelled by route template and status class, never by raw path.
     Instrumentator(
