@@ -33,13 +33,13 @@ export function Modal({ title, description, onClose, children }: ModalProps) {
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // If the focused element is removed, bring focus back into the dialog instead of the page.
-  function onBlur(e: React.FocusEvent) {
-    if (e.relatedTarget) return
-    queueMicrotask(() => {
-      if (panel.current && document.activeElement === document.body) panel.current.focus()
-    })
-  }
+  // Browsers do not fire blur when a focused element is removed, so check after every render:
+  // if focus is no longer inside the dialog (e.g. a form was replaced by its result), pull it
+  // back in rather than leaving it on the page behind.
+  useEffect(() => {
+    const el = panel.current
+    if (el && !el.contains(document.activeElement)) el.focus()
+  })
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key !== 'Tab' || !panel.current) return
@@ -69,7 +69,6 @@ export function Modal({ title, description, onClose, children }: ModalProps) {
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        onBlur={onBlur}
         className="max-h-full w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-surface-3 p-5 shadow-2xl sm:rounded-2xl"
       >
         <div className="mb-4 flex items-start justify-between gap-4">
