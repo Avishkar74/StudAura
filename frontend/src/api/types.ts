@@ -118,6 +118,35 @@ export interface Goal {
   goal_achieved: boolean
 }
 
+/** One note in the notes list: its first line, the text after it, and where it lives. */
+export interface NoteListItem {
+  video_id: string
+  video: VideoMeta
+  path: { id: string; title: string } | null
+  title: string
+  snippet: string
+  updated_at: string
+  revision: number
+}
+
+export interface SavedState {
+  video_id: string
+  saved: boolean
+  saved_at: string | null
+}
+
+/** A bookmarked video with the student's progress on it. */
+export interface SavedItem {
+  video_id: string
+  video: VideoMeta
+  path: { id: string; title: string } | null
+  learning_status: LearningStatus
+  last_position_seconds: number
+  playback_pct: number | null
+  last_watched_at: string | null
+  saved_at: string
+}
+
 /** A video the student has watched, with their progress and a path to open it in. */
 export interface LearningItem {
   video_id: string

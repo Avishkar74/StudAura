@@ -6,7 +6,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import VideoNote
+from app.models import LearningPath, LearningPathVideo, Video, VideoNote
 
 
 async def get_note(db: AsyncSession, user_id: uuid.UUID, video_id: uuid.UUID) -> VideoNote | None:
@@ -69,3 +69,52 @@ async def save_note(
             await db.execute(change.returning(VideoNote), execution_options=options)
         ).scalar_one_or_none()
     return note
+
+
+# The note body is HTML, so searching and "is it empty?" look at the text between the tags.
+_TEXT = func.regexp_replace(VideoNote.body, "<[^>]*>", " ", "g")
+
+
+def _escape_like(term: str) -> str:
+    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+async def search_notes(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    q: str | None,
+    path_id: uuid.UUID | None,
+    limit: int,
+    offset: int,
+) -> tuple[list[tuple[VideoNote, Video]], int]:
+    """The user's notes that have text, newest edit first, optionally filtered.
+
+    `q` matches the note's text (not its markup, not case); `path_id` keeps notes on videos in
+    that one of the user's own paths (someone else's path matches nothing).
+    """
+    conditions = [VideoNote.user_id == user_id, func.btrim(_TEXT, " \n\t\r") != ""]
+    if q:
+        conditions.append(_TEXT.ilike(f"%{_escape_like(q)}%", escape="\\"))
+    if path_id is not None:
+        conditions.append(
+            VideoNote.video_id.in_(
+                select(LearningPathVideo.video_id)
+                .join(LearningPath, LearningPath.id == LearningPathVideo.learning_path_id)
+                .where(LearningPath.id == path_id, LearningPath.user_id == user_id)
+            )
+        )
+    total = (
+        await db.execute(select(func.count()).select_from(VideoNote).where(*conditions))
+    ).scalar_one()
+    rows = (
+        await db.execute(
+            select(VideoNote, Video)
+            .join(Video, Video.id == VideoNote.video_id)
+            .where(*conditions)
+            .order_by(VideoNote.updated_at.desc(), VideoNote.id)
+            .limit(limit)
+            .offset(offset)
+        )
+    ).all()
+    return [(note, video) for note, video in rows], int(total)

@@ -5,6 +5,8 @@ import { RedirectIfAuthed, RequireAuth } from '@/features/auth/RequireAuth'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { HomePage } from '@/features/dashboard/HomePage'
 import { GoalsPage } from '@/features/goals/GoalsPage'
+import { LibraryPage } from '@/features/library/LibraryPage'
+import { NotesPage } from '@/features/notes/NotesPage'
 import { AllPathsPage } from '@/features/learning-paths/AllPathsPage'
 import { PathPage } from '@/features/learning-paths/PathPage'
 import { PathWorkspacePage, SavedWorkspacePage } from '@/features/player/WorkspacePages'
@@ -43,24 +45,8 @@ export function App() {
           <Route path="/learn/saved/:videoId" element={<SavedWorkspacePage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/revision" element={<RevisionPage />} />
-          <Route
-            path="/notes"
-            element={
-              <PlaceholderPage
-                title="My Notes"
-                description="Every note you've written, in one place."
-              />
-            }
-          />
-          <Route
-            path="/library"
-            element={
-              <PlaceholderPage
-                title="Saved Videos"
-                description="Videos you bookmarked to return to."
-              />
-            }
-          />
+          <Route path="/notes" element={<NotesPage />} />
+          <Route path="/library" element={<LibraryPage />} />
           <Route
             path="/settings"
             element={

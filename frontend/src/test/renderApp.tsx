@@ -56,6 +56,10 @@ export function mockApi(routes: Record<string, Handler>) {
       },
     },
     'GET /api/v1/goals/deadlines': { body: [] },
+    // ...no notes and no bookmarks...
+    'GET /api/v1/notes': { body: { total: 0, limit: 100, offset: 0, items: [] } },
+    'GET /api/v1/saved-videos': { body: { total: 0, limit: 100, offset: 0, items: [] } },
+    'GET /saved': { body: { video_id: 'v', saved: false, saved_at: null } },
     // ...nothing watched yet...
     'GET /api/v1/dashboard': { body: { continue_learning: null, recently_watched: [] } },
     // ...and an empty revision queue; a video that is not in it.

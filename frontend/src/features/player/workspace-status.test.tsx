@@ -242,3 +242,28 @@ describe('viewing time', () => {
     expect((sent[0].body as { started_at: string }).started_at).toMatch(/Z$/)
   })
 })
+
+describe('saving a video', () => {
+  it('offers a Save button that bookmarks the video being watched', async () => {
+    const user = userEvent.setup()
+    let saved = false
+    const mock = api(
+      {},
+      {
+        'GET /api/v1/videos/v1/saved': () => ({
+          body: { video_id: 'v1', saved, saved_at: saved ? '2026-10-15T10:00:00Z' : null },
+        }),
+        'PUT /api/v1/videos/v1/saved': () => {
+          saved = true
+          return { body: { video_id: 'v1', saved: true, saved_at: '2026-10-15T10:00:00Z' } }
+        },
+      },
+    )
+    await open()
+    await user.click(await screen.findByRole('button', { name: 'Save' }))
+    expect(await screen.findByRole('button', { name: 'Saved' })).toBeInTheDocument()
+    expect(mock.calls.some((c) => c.method === 'PUT' && c.url.endsWith('/videos/v1/saved'))).toBe(
+      true,
+    )
+  })
+})

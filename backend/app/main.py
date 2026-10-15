@@ -8,6 +8,7 @@ from app.api.v1 import (
     goals,
     health,
     learning_paths,
+    library,
     me,
     notes,
     playlists,
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     app.include_router(comments.router)
     app.include_router(dashboard.router)
     app.include_router(goals.router)
+    app.include_router(library.router)
     app.include_router(revisions.router)
     app.include_router(viewing_sessions.router)
 

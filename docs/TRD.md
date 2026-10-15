@@ -405,8 +405,9 @@ CREATE TABLE saved_videos (
 | GET | `/api/v1/videos/{id}/revision` | A video's revision state (active, due date, last revised) |
 | PUT | `/api/v1/videos/{id}/revision` | Flag / reschedule revision (idempotent) |
 | POST | `/api/v1/videos/{id}/revision/complete` | Mark revised |
-| GET | `/api/v1/notes` | Notes index across all paths |
-| GET | `/api/v1/saved-videos` | List bookmarked videos |
+| GET | `/api/v1/notes` | Notes index across all paths (search `q`, filter `path_id`) |
+| GET | `/api/v1/saved-videos` | List bookmarked videos (filter `status`, sort `saved`/`watched`) |
+| GET | `/api/v1/videos/{id}/saved` | Whether a video is bookmarked |
 | PUT | `/api/v1/videos/{id}/saved` | Bookmark video |
 | DELETE | `/api/v1/videos/{id}/saved` | Remove bookmark |
 | GET | `/health` | Liveness (no DB check) |
