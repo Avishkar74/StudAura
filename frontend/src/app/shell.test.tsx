@@ -210,13 +210,13 @@ describe('search', () => {
 })
 
 describe('Add menu', () => {
-  it('offers the three actions, with playlist import marked as coming soon', async () => {
+  it('offers the three actions', async () => {
     const user = userEvent.setup()
     await renderShell()
     await user.click(screen.getByRole('button', { name: /Add/ }))
     const menu = screen.getByRole('menu', { name: 'Add' })
     expect(within(menu).getByRole('menuitem', { name: 'Add YouTube Video' })).toBeEnabled()
-    expect(within(menu).getByRole('menuitem', { name: /Import YouTube Playlist/ })).toBeDisabled()
+    expect(within(menu).getByRole('menuitem', { name: 'Import YouTube Playlist' })).toBeEnabled()
     expect(within(menu).getByRole('menuitem', { name: 'Create Learning Path' })).toBeEnabled()
   })
 
@@ -238,6 +238,16 @@ describe('Add menu', () => {
     await user.click(screen.getByRole('button', { name: /Add/ }))
     await user.click(screen.getByRole('menuitem', { name: 'Add YouTube Video' }))
     expect(await screen.findByRole('dialog', { name: 'Add YouTube video' })).toBeInTheDocument()
+  })
+
+  it('opens the playlist import dialog', async () => {
+    const user = userEvent.setup()
+    await renderShell()
+    await user.click(screen.getByRole('button', { name: /Add/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Import YouTube Playlist' }))
+    expect(
+      await screen.findByRole('dialog', { name: 'Import YouTube playlist' }),
+    ).toBeInTheDocument()
   })
 })
 
