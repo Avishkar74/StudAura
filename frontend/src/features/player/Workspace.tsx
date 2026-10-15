@@ -14,6 +14,7 @@ import { pathKeys } from '@/features/learning-paths/queries'
 import { shouldOfferResume } from './resume'
 import { dashboardKeys } from '@/features/dashboard/queries'
 import { goalKeys } from '@/features/goals/queries'
+import { SaveToggle } from '@/features/library/SaveToggle'
 import { revisionKeys } from '@/features/revisions/queries'
 import { RevisionControls } from '@/features/revisions/RevisionControls'
 import { usePlaybackTracker } from './usePlaybackTracker'
@@ -192,9 +193,12 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
           </div>
         )}
 
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{video.title}</h1>
-          {video.channel_title && <p className="text-text-secondary">{video.channel_title}</p>}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight">{video.title}</h1>
+            {video.channel_title && <p className="text-text-secondary">{video.channel_title}</p>}
+          </div>
+          <SaveToggle videoId={video.id} />
         </div>
 
         <section
