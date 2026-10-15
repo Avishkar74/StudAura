@@ -1,6 +1,7 @@
 """Video metadata and path-membership queries."""
 
 import uuid
+from collections.abc import Sequence
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -83,3 +84,63 @@ async def remove_from_path(
         )
     )
     return (result.rowcount or 0) > 0  # type: ignore[attr-defined]
+
+
+async def get_by_youtube_ids(
+    db: AsyncSession, youtube_video_ids: Sequence[str]
+) -> dict[str, Video]:
+    if not youtube_video_ids:
+        return {}
+    rows = (
+        await db.execute(select(Video).where(Video.youtube_video_id.in_(list(youtube_video_ids))))
+    ).scalars()
+    return {v.youtube_video_id: v for v in rows}
+
+
+async def upsert_videos(db: AsyncSession, metas: Sequence[VideoMetadata]) -> dict[str, Video]:
+    """Bulk insert-or-refresh of shared metadata rows, keyed by YouTube video id."""
+    if not metas:
+        return {}
+    insert_stmt = insert(Video).values(
+        [
+            {
+                "youtube_video_id": m.youtube_video_id,
+                "title": m.title,
+                "channel_title": m.channel_title,
+                "thumbnail_url": m.thumbnail_url,
+                "duration_seconds": m.duration_seconds,
+                "availability_state": m.availability_state,
+                "metadata_fetched_at": func.now(),
+            }
+            for m in metas
+        ]
+    )
+    stmt = insert_stmt.on_conflict_do_update(
+        index_elements=[Video.youtube_video_id],
+        set_={
+            "title": insert_stmt.excluded.title,
+            "channel_title": insert_stmt.excluded.channel_title,
+            "thumbnail_url": insert_stmt.excluded.thumbnail_url,
+            "duration_seconds": insert_stmt.excluded.duration_seconds,
+            "availability_state": insert_stmt.excluded.availability_state,
+            "metadata_fetched_at": insert_stmt.excluded.metadata_fetched_at,
+        },
+    ).returning(Video)
+    result = await db.execute(stmt, execution_options={"populate_existing": True})
+    videos: list[Video] = list(result.scalars())
+    return {v.youtube_video_id: v for v in videos}
+
+
+async def memberships_in_path(
+    db: AsyncSession, path_id: uuid.UUID, video_ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, int]:
+    """Which of these videos are already in the path, mapped to their position."""
+    if not video_ids:
+        return {}
+    rows = await db.execute(
+        select(LearningPathVideo.video_id, LearningPathVideo.position).where(
+            LearningPathVideo.learning_path_id == path_id,
+            LearningPathVideo.video_id.in_(list(video_ids)),
+        )
+    )
+    return {video_id: position for video_id, position in rows}

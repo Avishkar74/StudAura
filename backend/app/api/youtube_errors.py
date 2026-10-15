@@ -3,6 +3,7 @@
 from app.core.errors import ApiError
 from app.integrations.youtube.errors import (
     NotConfiguredError,
+    PlaylistUnavailableError,
     QuotaExceededError,
     VideoUnavailableError,
     YouTubeError,
@@ -16,6 +17,13 @@ def to_api_error(exc: YouTubeError) -> ApiError:
             422,
             "VIDEO_UNAVAILABLE",
             "This video is private, removed or unavailable, so it can't be added.",
+        )
+    if isinstance(exc, PlaylistUnavailableError):
+        return ApiError(
+            422,
+            "PLAYLIST_UNAVAILABLE",
+            "This playlist is private or doesn't exist, so it can't be imported. "
+            "Make sure it is set to Public or Unlisted.",
         )
     if isinstance(exc, QuotaExceededError):
         return ApiError(
