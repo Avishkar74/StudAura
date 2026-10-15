@@ -35,3 +35,12 @@ export function formatTimestamp(totalSeconds: number): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`
 }
+
+/** 0 -> "0 min", 2520 -> "42 min", 3900 -> "1 h 5 min". For tracked viewing time. */
+export function formatDuration(totalSeconds: number): string {
+  const minutes = Math.floor(Math.max(0, totalSeconds) / 60)
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h === 0) return `${m} min`
+  return m === 0 ? `${h} h` : `${h} h ${m} min`
+}

@@ -78,8 +78,9 @@ describe('dashboard', () => {
     expect(summary.getByText('Videos Completed').parentElement).toHaveTextContent(
       'out of 15 videos',
     )
-    // Tracking does not exist yet, so these say so instead of showing 0.
-    expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('—')
+    // Nothing watched today, and revisions are not tracked yet.
+    expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('0 min')
+    expect(summary.getByText('Learning Time').parentElement).toHaveTextContent('tracked today')
     expect(summary.getByText('Needs Revision').parentElement).toHaveTextContent('Not tracked yet')
   })
 

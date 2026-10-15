@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatRelative, greetingFor } from './time'
+import { formatDuration, formatRelative, greetingFor } from './time'
 
 const NOW = new Date('2026-10-15T12:00:00Z')
 const ago = (seconds: number) => new Date(NOW.getTime() - seconds * 1000).toISOString()
@@ -34,5 +34,19 @@ describe('greetingFor', () => {
     [23, 'Good evening'],
   ])('%i:00 -> %s', (hour, expected) => {
     expect(greetingFor(new Date(2026, 9, 15, hour))).toBe(expected)
+  })
+})
+
+describe('formatDuration', () => {
+  it.each([
+    [0, '0 min'],
+    [59, '0 min'],
+    [60, '1 min'],
+    [2520, '42 min'],
+    [3600, '1 h'],
+    [3900, '1 h 5 min'],
+    [-30, '0 min'],
+  ])('formats %s seconds as %s', (seconds, expected) => {
+    expect(formatDuration(seconds)).toBe(expected)
   })
 })

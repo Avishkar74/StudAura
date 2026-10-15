@@ -42,6 +42,19 @@ type Handler = ApiReply | ((init: RequestInit | undefined, url: string) => ApiRe
  * Unmatched requests get a 404 so a missing stub fails loudly instead of hanging.
  */
 export function mockApi(routes: Record<string, Handler>) {
+  // The dashboard always asks for the daily goal; tests that don't care get "no goal yet".
+  routes = {
+    'GET /api/v1/goals': {
+      body: {
+        daily_target_minutes: null,
+        timezone: 'UTC',
+        today: '2026-10-15',
+        today_watched_seconds: 0,
+        goal_achieved: false,
+      },
+    },
+    ...routes,
+  }
   const calls: { method: string; url: string; body: unknown }[] = []
   const fn = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input).replace(/^https?:\/\/[^/]+/, '')
