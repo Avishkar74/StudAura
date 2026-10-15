@@ -67,6 +67,7 @@ services:
     environment:
       # Browser-side URL of the backend (the browser, not the container, makes the calls).
       VITE_API_BASE_URL: http://localhost:8000
+      VITE_USE_POLLING: "true"
     ports:
       - "5173:5173"
     volumes:
