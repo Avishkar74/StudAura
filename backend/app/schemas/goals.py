@@ -6,6 +6,11 @@ from pydantic import AwareDatetime, BaseModel, Field
 MAX_DAILY_TARGET_MINUTES = 1440
 
 
+class DayTotal(BaseModel):
+    date: date
+    watched_seconds: int
+
+
 class GoalRead(BaseModel):
     """The daily goal and today's tracked time. `daily_target_minutes` is None until one is set."""
 
@@ -15,6 +20,8 @@ class GoalRead(BaseModel):
     today_watched_seconds: int
     # The last seven days including today, each counted in the same timezone.
     week_watched_seconds: int
+    # Each of the last seven days, oldest first, ending with today.
+    daily: list[DayTotal]
     goal_achieved: bool
 
 
@@ -34,3 +41,19 @@ class ViewingSessionUpdate(BaseModel):
 
 class ViewingSessionRead(BaseModel):
     watched_seconds: int
+
+
+class PathDeadline(BaseModel):
+    """What it takes to finish a path by its target date. An estimate, not a promise."""
+
+    path_id: uuid.UUID
+    title: str
+    target_date: date
+    # Videos not yet completed, and their known total length.
+    remaining_videos: int
+    remaining_seconds: int
+    # Remaining videos whose length is unknown, which the estimate cannot include.
+    videos_without_duration: int
+    days_remaining: int
+    # None when it cannot be estimated (the date is today or past).
+    minutes_per_day: float | None

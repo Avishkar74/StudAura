@@ -60,3 +60,19 @@ def daily_watched_seconds(sessions: list[tuple[datetime, int]], tz: ZoneInfo, da
 
 def goal_achieved(target_minutes: int | None, watched_seconds: int) -> bool:
     return target_minutes is not None and watched_seconds >= target_minutes * 60
+
+
+def last_seven_days(today: date) -> list[date]:
+    """The seven calendar days ending with `today`, oldest first."""
+    return [today - timedelta(days=n) for n in range(6, -1, -1)]
+
+
+def deadline_estimate_minutes_per_day(
+    remaining_seconds: int | None, target_date: date, today: date
+) -> float | None:
+    """Minutes a day needed to finish by `target_date`, or None when no estimate is possible
+    (nothing known to watch, or the date is today or already past). TRD 9.4."""
+    if remaining_seconds is None or target_date <= today:
+        return None
+    days_remaining = (target_date - today).days
+    return round((remaining_seconds / 60) / days_remaining, 1)

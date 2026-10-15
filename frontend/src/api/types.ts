@@ -84,6 +84,26 @@ export interface Note {
   updated_at: string | null
 }
 
+export interface DayTotal {
+  /** A calendar day in the student's timezone (YYYY-MM-DD). */
+  date: string
+  watched_seconds: number
+}
+
+/** What it takes to finish a path by its target date. An estimate from known video lengths. */
+export interface PathDeadline {
+  path_id: string
+  title: string
+  target_date: string
+  remaining_videos: number
+  remaining_seconds: number
+  /** Remaining videos of unknown length, which the estimate cannot include. */
+  videos_without_duration: number
+  days_remaining: number
+  /** Null when the date is today or past. */
+  minutes_per_day: number | null
+}
+
 /** The daily goal and today's tracked viewing time (the day is counted in `timezone`). */
 export interface Goal {
   /** Null until a goal has been set. */
@@ -93,6 +113,8 @@ export interface Goal {
   today_watched_seconds: number
   /** The last seven days including today. */
   week_watched_seconds: number
+  /** Each of the last seven days, oldest first, ending with today. */
+  daily: DayTotal[]
   goal_achieved: boolean
 }
 

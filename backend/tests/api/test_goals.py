@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -368,3 +368,199 @@ async def test_the_week_total_covers_the_last_seven_days_including_today(
     body = await goal(auth_client, alice)
     assert body["today_watched_seconds"] == 100
     assert body["week_watched_seconds"] == 120
+
+
+async def test_the_daily_breakdown_has_seven_days_with_zeros_filled_in(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    video = await video_for(auth_client, session, alice)
+    tz = ZoneInfo("UTC")
+    today = today_in(tz, datetime.now(UTC))
+    start, _ = local_day_bounds(tz, today)
+    session.add_all(
+        [
+            ViewingSession(
+                user_id=alice.id,
+                video_id=video.id,
+                started_at=start - timedelta(days=2) + timedelta(hours=1),
+                watched_seconds=300,
+                idempotency_key=f"k-{uuid.uuid4()}",
+            ),
+            ViewingSession(
+                user_id=alice.id,
+                video_id=video.id,
+                started_at=start + timedelta(minutes=1),
+                watched_seconds=100,
+                idempotency_key=f"k-{uuid.uuid4()}",
+            ),
+        ]
+    )
+    await session.flush()
+    daily = (await goal(auth_client, alice))["daily"]
+    assert [d["date"] for d in daily] == [
+        (today - timedelta(days=n)).isoformat() for n in range(6, -1, -1)
+    ]
+    assert [d["watched_seconds"] for d in daily] == [0, 0, 0, 0, 300, 0, 100]
+
+
+async def test_each_session_counts_on_the_day_it_started_in_the_users_timezone(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    video = await video_for(auth_client, session, alice)
+    tz = ZoneInfo("Asia/Kolkata")
+    await auth_client.put(
+        GOALS, json={"daily_target_minutes": 30, "timezone": "Asia/Kolkata"}, headers=alice.h
+    )
+    today = today_in(tz, datetime.now(UTC))
+    start, _ = local_day_bounds(tz, today)
+    session.add_all(
+        [
+            ViewingSession(
+                user_id=alice.id,
+                video_id=video.id,
+                started_at=start - timedelta(minutes=1),  # 23:59 yesterday, local
+                watched_seconds=40,
+                idempotency_key=f"k-{uuid.uuid4()}",
+            ),
+            ViewingSession(
+                user_id=alice.id,
+                video_id=video.id,
+                started_at=start + timedelta(minutes=1),  # 00:01 today, local
+                watched_seconds=7,
+                idempotency_key=f"k-{uuid.uuid4()}",
+            ),
+        ]
+    )
+    await session.flush()
+    daily = (await goal(auth_client, alice))["daily"]
+    assert [d["watched_seconds"] for d in daily][-2:] == [40, 7]
+    assert daily[-1]["date"] == today.isoformat()
+
+
+# --- Path deadlines -----------------------------------------------------------
+
+
+async def deadlines(client: httpx.AsyncClient, who: Actor, **params: str) -> list[dict[str, Any]]:
+    resp = await client.get(f"{GOALS}/deadlines", params=params, headers=who.h)
+    assert resp.status_code == 200, resp.text
+    body: list[dict[str, Any]] = resp.json()
+    return body
+
+
+async def path_with_videos(
+    client: httpx.AsyncClient,
+    session: AsyncSession,
+    who: Actor,
+    title: str,
+    target: date | None,
+    durations: list[int | None],
+) -> tuple[str, list[Video]]:
+    extra = {"target_date": target.isoformat()} if target else {}
+    path = await create(client, who, title, **extra)
+    videos = [
+        await add_video(session, path["id"], i + 1, duration=d) for i, d in enumerate(durations)
+    ]
+    return path["id"], videos
+
+
+async def test_a_deadline_estimates_minutes_a_day_from_the_remaining_videos(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    today = today_in(ZoneInfo("UTC"), datetime.now(UTC))
+    await path_with_videos(
+        auth_client, session, alice, "DSA", today + timedelta(days=10), [3600, 7200, 61200]
+    )
+    (item,) = await deadlines(auth_client, alice)
+    assert item["title"] == "DSA"
+    assert item["remaining_videos"] == 3
+    assert item["remaining_seconds"] == 72_000  # 20 hours
+    assert item["days_remaining"] == 10
+    assert item["minutes_per_day"] == 120.0  # two hours a day
+    assert item["videos_without_duration"] == 0
+
+
+async def test_completed_videos_are_not_left_to_do(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    today = today_in(ZoneInfo("UTC"), datetime.now(UTC))
+    _, videos = await path_with_videos(
+        auth_client, session, alice, "P", today + timedelta(days=4), [600, 1200, 1800]
+    )
+    await auth_client.put(
+        f"/api/v1/videos/{videos[0].id}/progress",
+        json={"learning_status": "COMPLETED"},
+        headers=alice.h,
+    )
+    # A completed video later flagged for revision is still not work to be done.
+    await auth_client.put(f"/api/v1/videos/{videos[0].id}/revision", json={}, headers=alice.h)
+    (item,) = await deadlines(auth_client, alice)
+    assert (item["remaining_videos"], item["remaining_seconds"]) == (2, 3000)
+
+
+async def test_videos_of_unknown_length_are_counted_but_not_estimated(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    today = today_in(ZoneInfo("UTC"), datetime.now(UTC))
+    await path_with_videos(
+        auth_client, session, alice, "P", today + timedelta(days=2), [1200, None, None]
+    )
+    (item,) = await deadlines(auth_client, alice)
+    assert item["remaining_videos"] == 3
+    assert item["remaining_seconds"] == 1200
+    assert item["videos_without_duration"] == 2
+    assert item["minutes_per_day"] == 10.0
+
+
+async def test_a_path_with_nothing_left_or_no_target_date_is_left_out(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    today = today_in(ZoneInfo("UTC"), datetime.now(UTC))
+    _, done = await path_with_videos(
+        auth_client, session, alice, "Done", today + timedelta(days=3), [600]
+    )
+    await auth_client.put(
+        f"/api/v1/videos/{done[0].id}/progress",
+        json={"learning_status": "COMPLETED"},
+        headers=alice.h,
+    )
+    await path_with_videos(auth_client, session, alice, "No date", None, [600])
+    await create(auth_client, alice, "Empty", target_date=(today + timedelta(days=3)).isoformat())
+    assert await deadlines(auth_client, alice) == []
+
+
+async def test_a_deadline_that_has_arrived_has_no_estimate(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    today = today_in(ZoneInfo("UTC"), datetime.now(UTC))
+    await path_with_videos(auth_client, session, alice, "Today", today, [600])
+    await path_with_videos(auth_client, session, alice, "Missed", today - timedelta(days=3), [600])
+    items = {i["title"]: i for i in await deadlines(auth_client, alice)}
+    assert items["Today"]["minutes_per_day"] is None
+    assert items["Today"]["days_remaining"] == 0
+    assert items["Missed"]["minutes_per_day"] is None
+    assert items["Missed"]["days_remaining"] == -3
+
+
+async def test_deadlines_are_listed_soonest_first(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    today = today_in(ZoneInfo("UTC"), datetime.now(UTC))
+    await path_with_videos(auth_client, session, alice, "Later", today + timedelta(days=30), [600])
+    await path_with_videos(auth_client, session, alice, "Sooner", today + timedelta(days=5), [600])
+    assert [i["title"] for i in await deadlines(auth_client, alice)] == ["Sooner", "Later"]
+
+
+async def test_deadlines_belong_to_one_student(
+    auth_client: httpx.AsyncClient, alice: Actor, bob: Actor, session: AsyncSession
+) -> None:
+    today = today_in(ZoneInfo("UTC"), datetime.now(UTC))
+    await path_with_videos(auth_client, session, alice, "Alice's", today + timedelta(days=5), [600])
+    assert await deadlines(auth_client, bob) == []
+
+
+async def test_deadlines_need_a_valid_timezone_and_a_login(
+    auth_client: httpx.AsyncClient, alice: Actor
+) -> None:
+    assert (await auth_client.get(f"{GOALS}/deadlines")).status_code == 401
+    bad = await auth_client.get(f"{GOALS}/deadlines", params={"timezone": "nope"}, headers=alice.h)
+    assert bad.status_code == 422

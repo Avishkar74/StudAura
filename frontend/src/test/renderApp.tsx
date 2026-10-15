@@ -51,9 +51,11 @@ export function mockApi(routes: Record<string, Handler>) {
         today: '2026-10-15',
         today_watched_seconds: 0,
         week_watched_seconds: 0,
+        daily: [],
         goal_achieved: false,
       },
     },
+    'GET /api/v1/goals/deadlines': { body: [] },
     // ...nothing watched yet...
     'GET /api/v1/dashboard': { body: { continue_learning: null, recently_watched: [] } },
     // ...and an empty revision queue; a video that is not in it.
