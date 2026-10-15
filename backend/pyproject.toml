@@ -38,7 +38,8 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["build"]
+# Generated migrations are exempt from style checks.
+extend-exclude = ["build", "alembic/versions"]
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -54,5 +55,5 @@ plugins = ["pydantic.mypy"]
 exclude = ["alembic/versions/"]
 
 [[tool.mypy.overrides]]
-module = ["jose.*", "prometheus_fastapi_instrumentator.*"]
+module = ["jose.*", "prometheus_fastapi_instrumentator.*", "asyncpg.*"]
 ignore_missing_imports = true

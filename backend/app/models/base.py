@@ -1,5 +1,8 @@
-from sqlalchemy import MetaData
-from sqlalchemy.orm import DeclarativeBase
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, MetaData, Uuid, text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 # Stable constraint names keep Alembic autogenerate diffs and downgrades predictable.
 NAMING_CONVENTION = {
@@ -13,3 +16,16 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+
+def uuid_pk() -> Mapped[uuid.UUID]:
+    return mapped_column(Uuid, primary_key=True, server_default=text("gen_random_uuid()"))
+
+
+def now_column(*, onupdate: bool = False) -> Mapped[datetime]:
+    return mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        onupdate=text("now()") if onupdate else None,
+    )
