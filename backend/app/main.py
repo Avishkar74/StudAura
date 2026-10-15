@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api.v1 import health
+from app.api.v1 import health, me
 from app.core.errors import install_error_handlers
 from app.core.logging import configure_logging
 from app.core.settings import settings
@@ -22,6 +22,7 @@ def create_app() -> FastAPI:
     install_error_handlers(app)
 
     app.include_router(health.router)
+    app.include_router(me.router)
 
     # HTTP metrics labelled by route template and status class, never by raw path.
     Instrumentator(
