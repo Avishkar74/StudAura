@@ -31,6 +31,16 @@ docker compose up --build   # db + migrations + backend + frontend
 Compose always uses its own local Postgres, regardless of `DATABASE_URL` in `.env`
 (that value is for running against Supabase). Migrations run as a one-shot `migrate` service.
 
+## Supabase setup
+
+1. Create a project and copy the URL and anon key into `.env` (`VITE_SUPABASE_URL`,
+   `VITE_SUPABASE_ANON_KEY`).
+2. Authentication > Providers > Email is enabled by default. With "Confirm email" on, new users
+   get a confirmation link before they can sign in (Supabase's built-in mailer is rate limited;
+   turn confirmation off for local development if you hit the limit).
+3. The backend verifies tokens through the project's public JWKS, so no JWT secret is needed on
+   projects using Supabase's asymmetric signing keys.
+
 ## Common commands
 
 ```bash

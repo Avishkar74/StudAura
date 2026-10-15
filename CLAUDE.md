@@ -46,14 +46,16 @@ Authentication is handled entirely by **Supabase Auth**. Do not invent a custom 
 
 - The React frontend uses `@supabase/supabase-js` to sign up, sign in, and manage sessions.
 - JWTs are issued by Supabase and sent as `Authorization: Bearer <token>` on every API request.
-- The FastAPI backend verifies JWTs using the **Supabase JWT secret** (`SUPABASE_JWT_SECRET`). Use
-  the `python-jose` library. Never trust `user_id` from the request body; always extract it from
+- The FastAPI backend verifies JWTs with `python-jose`: ES256/RS256 tokens against the project's
+  public JWKS (`<SUPABASE_URL>/auth/v1/.well-known/jwks.json`, the default for current projects) and
+  legacy HS256 tokens with `SUPABASE_JWT_SECRET`. Never trust `user_id` from the request body; always extract it from
   the verified JWT payload (`sub` claim = user UUID).
 - User rows in the database use the same UUID as the Supabase Auth user. Do not maintain a
   separate password table.
 - Session refresh is handled by the Supabase client SDK. The backend is stateless.
 - Environment variables required: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (frontend),
-  `SUPABASE_JWT_SECRET` (backend only — never expose to frontend).
+  `SUPABASE_URL` (backend), `SUPABASE_JWT_SECRET` (backend only, legacy HS256 projects only — never
+  expose to frontend).
 
 ---
 

@@ -10,7 +10,12 @@ export default defineConfig({
   // In containers they arrive as real environment variables, which Vite also reads.
   envDir: '..',
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  server: { host: true, port: 5173 },
+  server: {
+    host: true,
+    port: 5173,
+    // File events do not cross Docker Desktop bind mounts on Windows/macOS; compose enables polling.
+    watch: process.env.VITE_USE_POLLING ? { usePolling: true, interval: 300 } : undefined,
+  },
   test: {
     environment: 'jsdom',
     globals: true,

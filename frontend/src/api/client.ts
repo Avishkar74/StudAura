@@ -13,8 +13,38 @@ export class ApiError extends Error {
   }
 }
 
+interface AuthHooks {
+  /** Current access token, or null when signed out. */
+  getToken: () => Promise<string | null>
+  /** Force a token refresh (used once after a 401); returns the new token or null. */
+  refreshToken: () => Promise<string | null>
+  /** Called when the session is definitively invalid. */
+  onUnauthorized: () => void
+}
+
+let hooks: AuthHooks | null = null
+
+export function configureApiAuth(next: AuthHooks | null): void {
+  hooks = next
+}
+
+function send(path: string, init: RequestInit | undefined, token: string | null) {
+  const headers = new Headers(init?.headers)
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  return fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, init)
+  let token = hooks ? await hooks.getToken() : null
+  let res = await send(path, init, token)
+
+  // 401: refresh the token and retry once, then give up and sign the user out.
+  if (res.status === 401 && hooks) {
+    token = await hooks.refreshToken()
+    if (token) res = await send(path, init, token)
+    if (!token || res.status === 401) hooks.onUnauthorized()
+  }
+
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as {
       error?: { code?: string; message?: string }

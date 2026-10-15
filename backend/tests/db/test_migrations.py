@@ -5,7 +5,7 @@ import asyncio
 import asyncpg
 
 from app.models import Base
-from tests.db.conftest import _asyncpg_dsn, run_alembic
+from tests.dbutil import asyncpg_dsn, run_alembic
 
 EXPECTED_TABLES = {
     "users",
@@ -23,7 +23,7 @@ EXPECTED_TABLES = {
 
 
 async def _tables(url: str) -> set[str]:
-    conn = await asyncpg.connect(_asyncpg_dsn(url))
+    conn = await asyncpg.connect(asyncpg_dsn(url))
     try:
         rows = await conn.fetch("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
     finally:
