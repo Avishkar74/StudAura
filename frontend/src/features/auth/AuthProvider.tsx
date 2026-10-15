@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js'
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { configureApiAuth } from '@/api/client'
 import { supabase } from '@/app/supabase'
 import { AuthContext, type AuthContextValue, type AuthStatus } from './authContext'
@@ -18,15 +19,32 @@ function friendlyError(message: string): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [status, setStatus] = useState<AuthStatus>('loading')
+  const queryClient = useQueryClient()
+  const lastUserId = useRef<string | null>(null)
+
+  // Cached server data belongs to one user. Drop it whenever the signed-in user changes or
+  // signs out, so the next person never sees the previous person's paths or notes.
+  const trackUser = useCallback(
+    (next: Session | null) => {
+      const id = next?.user.id ?? null
+      if (id !== lastUserId.current) {
+        if (lastUserId.current !== null) queryClient.clear()
+        lastUserId.current = id
+      }
+    },
+    [queryClient],
+  )
 
   useEffect(() => {
     let active = true
     void supabase.auth.getSession().then(({ data }) => {
       if (!active) return
+      trackUser(data.session)
       setSession(data.session)
       setStatus(data.session ? 'signedIn' : 'signedOut')
     })
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+      trackUser(next)
       setSession(next)
       setStatus(next ? 'signedIn' : 'signedOut')
     })
@@ -34,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false
       sub.subscription.unsubscribe()
     }
-  }, [])
+  }, [trackUser])
 
   useEffect(() => {
     configureApiAuth({

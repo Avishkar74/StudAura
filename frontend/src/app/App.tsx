@@ -4,6 +4,8 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { RedirectIfAuthed, RequireAuth } from '@/features/auth/RequireAuth'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { HomePage } from '@/features/dashboard/HomePage'
+import { AppShell } from './AppShell'
+import { PlaceholderPage } from './PlaceholderPage'
 
 function MissingConfig() {
   return (
@@ -26,9 +28,85 @@ export function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
       </Route>
+
       <Route element={<RequireAuth />}>
-        <Route path="/" element={<HomePage />} />
+        <Route element={<AppShell />}>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/learning-paths"
+            element={
+              <PlaceholderPage
+                title="All Learning Paths"
+                description="Manage and explore all your learning paths in one place."
+              />
+            }
+          />
+          <Route
+            path="/learning-paths/:pathId"
+            element={
+              <PlaceholderPage
+                title="Learning Path"
+                description="Videos, progress and status for this path."
+              />
+            }
+          />
+          <Route
+            path="/learn/:pathId/:videoId"
+            element={
+              <PlaceholderPage
+                title="Learning Workspace"
+                description="Watch, take notes and track progress."
+              />
+            }
+          />
+          <Route
+            path="/learn/saved/:videoId"
+            element={
+              <PlaceholderPage
+                title="Learning Workspace"
+                description="Watch a saved video with notes and progress."
+              />
+            }
+          />
+          <Route
+            path="/goals"
+            element={
+              <PlaceholderPage
+                title="Daily Goals"
+                description="Set a daily viewing target and track your progress."
+              />
+            }
+          />
+          <Route
+            path="/revision"
+            element={
+              <PlaceholderPage
+                title="Needs Revision"
+                description="Videos you marked for revision, ordered by due date."
+              />
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <PlaceholderPage title="My Notes" description="Every note you've written, in one place." />
+            }
+          />
+          <Route
+            path="/library"
+            element={
+              <PlaceholderPage title="Saved Videos" description="Videos you bookmarked to return to." />
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PlaceholderPage title="Settings" description="Your profile and preferences." />
+            }
+          />
+        </Route>
       </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
