@@ -3,17 +3,19 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Response
 
-from app.api.deps import CurrentUser, DbSession, YouTube
+from app.api.deps import CurrentUser, DbSession, YouTube, resolve_timezone
 from app.api.youtube_errors import to_api_error
 from app.core.errors import ApiError
-from app.core.metrics import completion_events_total, progress_updates_total
+from app.core.metrics import completion_events_total, progress_updates_total, revision_events_total
 from app.integrations.youtube.errors import YouTubeError
 from app.models import Video, VideoProgress
 from app.repositories import progress as progress_repo
+from app.repositories import revisions as revisions_repo
 from app.schemas.learning_path import PathVideoMeta
 from app.schemas.progress import ProgressRead, ProgressUpdate, VideoDetail
 from app.schemas.video import VideoImportRequest, VideoImportResponse
 from app.services import progress as progress_rules
+from app.services import revisions as revision_rules
 from app.services import video_import
 from app.services.youtube_urls import SUPPORTED_VIDEO_URL_EXAMPLES, parse_video_id
 
@@ -162,6 +164,15 @@ async def put_progress(
         status, ever_completed_at = progress_rules.apply_manual_status(
             status, ever_completed_at, body.learning_status, now
         )
+        # The queue follows the status: flagging puts the video in it (due tomorrow), and any other
+        # choice means the student is done revising, so it leaves.
+        if body.learning_status == "NEEDS_REVISION":
+            _, tz = await resolve_timezone(db, user, None)
+            await revisions_repo.ensure_active(
+                db, user.id, video_id, revision_rules.default_due_date(tz, now)
+            )
+        elif await revisions_repo.complete(db, user.id, video_id) is not None:
+            revision_events_total.labels(event="revised").inc()
     completion_outcome: str | None = None
     if body.playback_ended:
         if progress_rules.reached_the_end(position, video.duration_seconds):

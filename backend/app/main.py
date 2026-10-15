@@ -10,6 +10,7 @@ from app.api.v1 import (
     me,
     notes,
     playlists,
+    revisions,
     videos,
     viewing_sessions,
 )
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(notes.router)
     app.include_router(comments.router)
     app.include_router(goals.router)
+    app.include_router(revisions.router)
     app.include_router(viewing_sessions.router)
 
     # HTTP metrics labelled by route template and status class, never by raw path.
