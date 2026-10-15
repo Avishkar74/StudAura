@@ -19,6 +19,7 @@ export interface YTPlayer {
   getCurrentTime(): number
   getDuration(): number
   getPlayerState(): number
+  getPlaybackRate?(): number
   destroy(): void
 }
 

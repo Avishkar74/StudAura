@@ -88,7 +88,7 @@ describe('what triggers a save', () => {
     const { emit } = setup()
     emit(PlayerState.PLAYING, 1)
     emit(PlayerState.ENDED, 600)
-    expect(lastBody()).toEqual({ last_position_seconds: 600 })
+    expect(lastBody()).toMatchObject({ last_position_seconds: 600, playback_ended: true })
   })
 
   it('keeps the timer running through buffering', async () => {
@@ -180,5 +180,106 @@ describe('failures', () => {
     emit(PlayerState.PAUSED, 42)
     await flushPromises()
     expect(onSaved).toHaveBeenCalledWith(42)
+  })
+})
+
+describe('reporting the end of the video', () => {
+  async function playFor(seconds: number, from: number, player: { time: number }) {
+    for (let i = 0; i < seconds; i++) {
+      player.time = from + i + 1
+      await act(async () => void vi.advanceTimersByTime(1000))
+    }
+  }
+
+  it('says the session was clean after uninterrupted playback', async () => {
+    const { emit, player, result } = setup()
+    act(() => result.current.movedTo(590)) // e.g. Resume from 9:50
+    player.time = 590
+    emit(PlayerState.PLAYING, 590)
+    await playFor(10, 590, player)
+    emit(PlayerState.ENDED, 600)
+    expect(lastBody()).toEqual({
+      last_position_seconds: 600,
+      playback_ended: true,
+      session_seeked: false,
+    })
+  })
+
+  it('says the session was seeked after jumping ahead while playing', async () => {
+    const { emit, player } = setup()
+    emit(PlayerState.PLAYING, 1)
+    await playFor(2, 1, player)
+    player.time = 590 // dragged the progress bar
+    await act(async () => void vi.advanceTimersByTime(1000))
+    await playFor(10, 590, player)
+    emit(PlayerState.ENDED, 600)
+    expect(lastBody()).toMatchObject({ playback_ended: true, session_seeked: true })
+  })
+
+  it('says the session was seeked after seeking while paused', async () => {
+    const { emit } = setup()
+    emit(PlayerState.PLAYING, 5)
+    emit(PlayerState.PAUSED, 6)
+    emit(PlayerState.PLAYING, 599)
+    emit(PlayerState.ENDED, 600)
+    await act(async () => void vi.advanceTimersByTime(MIN_GAP_MS)) // the once-a-second limit
+    expect(lastBody()).toMatchObject({ playback_ended: true, session_seeked: true })
+  })
+
+  it('does not count Resume as a seek', async () => {
+    const { emit, player, result } = setup(500)
+    act(() => result.current.movedTo(500))
+    player.time = 500
+    emit(PlayerState.PLAYING, 500)
+    await playFor(100, 500, player)
+    emit(PlayerState.ENDED, 600)
+    expect(lastBody()).toMatchObject({ playback_ended: true, session_seeked: false })
+  })
+
+  it('starts a fresh session when the video is replayed', async () => {
+    const { emit, player } = setup()
+    emit(PlayerState.PLAYING, 1)
+    emit(PlayerState.ENDED, 600) // jumped: seeked
+    player.time = 0
+    emit(PlayerState.PLAYING, 0)
+    await playFor(5, 0, player)
+    emit(PlayerState.PAUSED, 5)
+    emit(PlayerState.PLAYING, 5)
+    await playFor(595, 5, player)
+    emit(PlayerState.ENDED, 600)
+    expect(lastBody()).toMatchObject({ playback_ended: true, session_seeked: false })
+  })
+
+  it('keeps the report and sends it again if the save fails', async () => {
+    const { emit, player, result } = setup()
+    act(() => result.current.movedTo(595))
+    player.time = 595
+    emit(PlayerState.PLAYING, 595)
+    await playFor(5, 595, player)
+    put.mockRejectedValueOnce(new Error('offline'))
+    emit(PlayerState.ENDED, 600)
+    await flushPromises()
+    await act(async () => void vi.advanceTimersByTime(5000)) // the retry
+    await flushPromises()
+    const reports = put.mock.calls.filter(([, body]) => body.playback_ended)
+    expect(reports.length).toBeGreaterThanOrEqual(2)
+    expect(reports.at(-1)?.[1]).toMatchObject({ session_seeked: false })
+  })
+
+  it('tells the caller what the server decided', async () => {
+    put.mockResolvedValue({ learning_status: 'COMPLETED' } as never)
+    const onProgress = vi.fn()
+    const hook = renderHook(() =>
+      usePlaybackTracker({ videoId: 'vid-1', savedPosition: 0, onProgress }),
+    )
+    const player = new FakePlayer(document.createElement('div'), { videoId: 'x' })
+    player.time = 598
+    act(() => hook.result.current.onReady(player as YTPlayer))
+    act(() => hook.result.current.onStateChange(PlayerState.PLAYING, player as YTPlayer))
+    await playFor(2, 598, player)
+    player.time = 600
+    act(() => hook.result.current.onStateChange(PlayerState.ENDED, player as YTPlayer))
+    await flushPromises()
+    expect(onProgress).toHaveBeenCalledWith({ learning_status: 'COMPLETED' })
   })
 })
