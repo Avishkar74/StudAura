@@ -85,3 +85,33 @@ async def upsert_progress(
     )
     result = await db.execute(stmt, execution_options={"populate_existing": True})
     return result.scalar_one()
+
+
+async def recently_watched(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int,
+    *,
+    unfinished_only: bool = False,
+) -> list[tuple[VideoProgress, Video]]:
+    """The user's videos by when they last watched them, newest first.
+
+    `unfinished_only` keeps videos that are In Progress and can still be played here, for
+    "Continue learning": a finished, flagged or unplayable video is not somewhere to resume.
+    """
+    query = (
+        select(VideoProgress, Video)
+        .join(Video, Video.id == VideoProgress.video_id)
+        .where(VideoProgress.user_id == user_id, VideoProgress.last_watched_at.is_not(None))
+    )
+    if unfinished_only:
+        query = query.where(
+            VideoProgress.learning_status == "IN_PROGRESS",
+            Video.availability_state == "available",
+        )
+    rows = (
+        await db.execute(
+            query.order_by(VideoProgress.last_watched_at.desc(), VideoProgress.id).limit(limit)
+        )
+    ).all()
+    return [(progress, video) for progress, video in rows]

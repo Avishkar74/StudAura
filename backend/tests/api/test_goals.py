@@ -338,3 +338,33 @@ async def test_two_users_can_record_the_same_minute_on_one_video(
     assert (await ping(auth_client, bob, video, started, 300)).json() == {"watched_seconds": 300}
     total = (await session.execute(select(func.count()).select_from(ViewingSession))).scalar_one()
     assert total == 2
+
+
+async def test_the_week_total_covers_the_last_seven_days_including_today(
+    auth_client: httpx.AsyncClient, alice: Actor, session: AsyncSession
+) -> None:
+    video = await video_for(auth_client, session, alice)
+    tz = ZoneInfo("UTC")
+    today = today_in(tz, datetime.now(UTC))
+    start, _ = local_day_bounds(tz, today)
+
+    def row(at: datetime, seconds: int) -> ViewingSession:
+        return ViewingSession(
+            user_id=alice.id,
+            video_id=video.id,
+            started_at=at,
+            watched_seconds=seconds,
+            idempotency_key=f"k-{uuid.uuid4()}",
+        )
+
+    session.add_all(
+        [
+            row(start + timedelta(minutes=1), 100),  # today
+            row(start - timedelta(days=6) + timedelta(minutes=1), 20),  # six days ago: counted
+            row(start - timedelta(days=7) + timedelta(minutes=1), 5000),  # a week ago: not
+        ]
+    )
+    await session.flush()
+    body = await goal(auth_client, alice)
+    assert body["today_watched_seconds"] == 100
+    assert body["week_watched_seconds"] == 120

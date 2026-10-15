@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from app.schemas.learning_path import PathVideoMeta
+from app.schemas.learning_path import PathRef, PathVideoMeta
 from app.services.revisions import DueState
 
 
@@ -28,11 +28,6 @@ class RevisionRead(BaseModel):
     revised_at: datetime | None
     due_state: DueState | None
     today: date
-
-
-class PathRef(BaseModel):
-    id: uuid.UUID
-    title: str
 
 
 class RevisionItemRead(BaseModel):
