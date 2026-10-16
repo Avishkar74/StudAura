@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str = ""
     YOUTUBE_DATA_API_KEY: str = ""
 
+    # How long /ready waits for the database. The default suits a database in the same region;
+    # raise it when the API and database are far apart (a new connection can take seconds).
+    DB_CHECK_TIMEOUT_SECONDS: float = Field(default=3.0, gt=0, le=60)
+
     @field_validator("DATABASE_URL")
     @classmethod
     def _use_asyncpg_driver(cls, value: str) -> str:

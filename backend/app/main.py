@@ -1,3 +1,7 @@
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -19,11 +23,24 @@ from app.api.v1 import (
 from app.core.errors import install_error_handlers
 from app.core.logging import configure_logging
 from app.core.settings import settings
+from app.db import warm_database_pool
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Warm the database pool in the background; startup is not held up and failures are ignored
+    # (/ready reports the real state). Tests never touch a real database here.
+    warm = None if settings.is_test else asyncio.create_task(warm_database_pool())
+    try:
+        yield
+    finally:
+        if warm is not None and not warm.done():
+            warm.cancel()
 
 
 def create_app() -> FastAPI:
     configure_logging()
-    app = FastAPI(title="StudAura API", version="0.1.0")
+    app = FastAPI(title="StudAura API", version="0.1.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,

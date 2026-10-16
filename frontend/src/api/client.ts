@@ -1,6 +1,16 @@
 /** Typed REST client. All backend calls go through here, never scattered fetch() calls. */
 
-export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || '/api'
+/**
+ * Where the API lives. Request paths already start with /api/v1, so the base is the origin only:
+ * empty (the default) means the page's own origin, which is right behind a reverse proxy or
+ * Ingress that routes /api to the backend. Set an absolute origin (http://localhost:8000) when the
+ * API is served from elsewhere. A trailing slash is ignored.
+ */
+export function resolveApiBase(raw: string | undefined): string {
+  return (raw ?? '').trim().replace(/\/+$/, '')
+}
+
+export const API_BASE_URL: string = resolveApiBase(import.meta.env.VITE_API_BASE_URL)
 
 export class ApiError extends Error {
   constructor(

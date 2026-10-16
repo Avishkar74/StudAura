@@ -30,3 +30,6 @@ Thumbs.db
 .idea/
 .vscode/
 backend/build/
+
+# SSH private keys
+*.pem

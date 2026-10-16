@@ -99,7 +99,8 @@ to get a build through.
    into the browser bundle, so they are variables, not secrets):
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_API_BASE_URL` (optional, defaults to `/api`, which is right behind the Ingress)
+   - `VITE_API_BASE_URL` (optional; leave unset for same-origin, which is right behind the Ingress.
+     Request paths already start with `/api/v1`, so this is an origin, never `/api`)
 3. After the first publish, the packages appear under your profile → **Packages**. Link them to
    the repository if they are not already, and set the visibility you want. The EKS cluster needs
    either public packages or an image pull secret.
