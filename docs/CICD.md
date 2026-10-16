@@ -21,7 +21,7 @@ push to main ──► backend ─┐
 | `images` (backend, frontend) | PR, main | Builds the production image (backend `runtime` stage, frontend `prod` stage), checks it runs as a non-root user, starts it and smoke-tests it: backend `GET /health`, `/metrics`, and `/ready` answering 503 with no database; frontend `/healthz`, `/`, a deep link falling back to the SPA, and the security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) on the page. |
 | `publish` (backend, frontend) | main only, after the three above | Builds, scans with Trivy, then pushes `ghcr.io/<owner>/studaura-backend` and `studaura-frontend`, tagged with the commit SHA only (never `latest`). |
 | `helm` | PR, main | Installs a pinned, checksum-verified Helm, runs `helm lint --strict`, checks that the chart refuses to render without `image.tag`, renders it with monitoring on and scans the rendered manifests with Trivy (HIGH and CRITICAL fail). |
-| `deploy` | main only, after `publish`, when `DEPLOY_ENABLED=true` | `helm upgrade --install --rollback-on-failure --wait` of the chart on EKS with this commit's SHA as `image.tag`; the migration runs as a pre-upgrade hook Job. A failed rollout rolls back. |
+| `gitops` | main only, after `publish` | Rewrites the `deploy` branch (main plus `helm/studaura/image.yaml` holding this commit's SHA). ArgoCD watches that branch and syncs the cluster; main is never pushed to. |
 
 Third-party actions are pinned to commit SHAs (the version is in a comment). Jobs get read-only
 `contents` access; only `publish` gets `packages: write`, and pull requests never reach it.
@@ -63,8 +63,7 @@ API errors in that same PR. FastAPI is likewise held below 0.136 until
 
 | Severity | Behaviour |
 |---|---|
-| CRITICAL with a fix available | **Blocks publishing.** The `publish` job fails before anything is pushed. |
-| HIGH | Reported in the artifacts; reviewed, does not block. |
+| HIGH or CRITICAL with a fix available | **Blocks publishing.** The `publish` job fails before anything is pushed. |
 | MEDIUM and below | In the JSON report only. |
 | Unfixed vulnerabilities | Ignored by the gate (nothing can be done yet) but present in the JSON report. |
 
@@ -81,7 +80,7 @@ locally the same way CI does:
 
 ```bash
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
-  image --severity CRITICAL --ignore-unfixed studaura-frontend:local
+  image --severity HIGH,CRITICAL --ignore-unfixed studaura-frontend:local
 ```
 
 Terraform is scanned by the same tool (`trivy config`) with the same bar: HIGH and CRITICAL
@@ -137,22 +136,21 @@ docker run --rm -p 8080:8080 studaura-frontend:local                   # then GE
 - The Helm deploy and the post-deploy smoke test (M17) will extend this workflow. They will assume
   the role from `deploy/terraform` through GitHub OIDC, with no stored AWS keys.
 
-## Deploying to the cluster from CI
+## Deploying with ArgoCD
 
-The `deploy` job uses a Kubernetes ServiceAccount limited to the `studaura` namespace, so no AWS
-keys are stored in GitHub. One-time setup, from a terminal that can already run `kubectl`:
+The cluster runs [ArgoCD](https://argo-cd.readthedocs.io); `argocd/application.yaml` tells it to
+render `helm/studaura` from the `deploy` branch with automated sync, pruning and self-heal. The
+`gitops` job is the only link between CI and the cluster: it moves the image tag, ArgoCD does the
+rest (the Alembic migration runs first, as a PreSync hook). No cluster credentials are stored in
+GitHub. Runtime secrets (`studaura-secrets`) are created in the cluster by hand and never pass
+through Git.
 
 ```bash
-kubectl apply -f k8s/ci-deployer.yaml
-NS=studaura
-gh secret set KUBE_SERVER  --body "$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
-gh secret set KUBE_CA_DATA --body "$(kubectl config view --minify --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')"
-kubectl -n $NS get secret ci-deployer-token -o jsonpath='{.data.token}' | base64 -d | gh secret set KUBE_TOKEN
-gh variable set PUBLIC_ORIGIN --body "http://<load-balancer-dns-name>"
-gh variable set MONITORING_ENABLED --body true
-gh variable set DEPLOY_ENABLED --body true
+helm upgrade --install argocd argo/argo-cd --version 10.10.5 -n argocd --create-namespace -f argocd/values.yaml
+kubectl apply -f k8s/namespace.yaml
+sed "s#<load-balancer-dns>#$LB#" argocd/application.yaml | kubectl apply -f -
+kubectl -n argocd port-forward svc/argocd-server 8080:80      # UI at http://localhost:8080
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
 ```
 
-The runtime Secret `studaura-secrets` (database URL, Supabase URL, YouTube key) is created in the
-cluster by hand and never passes through GitHub. Tear down with `terraform destroy` (or delete the
-cluster) when the evaluation is over, and set `DEPLOY_ENABLED` back to `false`.
+Tear down with `terraform destroy` when the evaluation is over.

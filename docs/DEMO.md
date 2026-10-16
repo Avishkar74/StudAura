@@ -18,7 +18,9 @@ About 10 minutes. Have these open before you start: the repository's Actions tab
    Helm, images). Merge it.
 3. Open the run on `main`: show the **publish** job (Trivy scan, then the push to GHCR) and the
    image tag, which is the commit SHA.
-4. Show **deploy**: `helm upgrade --install --rollback-on-failure`.
+4. Show **gitops**: it rewrites the `deploy` branch with the new image tag. Open the ArgoCD UI
+   (`kubectl -n argocd port-forward svc/argocd-server 8080:80`) and watch the `studaura`
+   application go **OutOfSync**, then **Syncing**, then **Synced / Healthy**.
 5. In the terminal:
 
    ```bash
@@ -42,7 +44,7 @@ kubectl -n monitoring get pods
 * `kubectl -n studaura port-forward deploy/studaura-backend 8000:8000` and open
   `http://localhost:8000/metrics`.
 * Mention the safety rails: Trivy gates the publish, the migration runs as a one-shot hook Job,
-  `--rollback-on-failure` rolls back a failed rollout, secrets live in the cluster and never in Git.
+  ArgoCD self-heals manual drift, secrets live in the cluster and never in Git.
 
 ## 4. Tear down (after the evaluation)
 

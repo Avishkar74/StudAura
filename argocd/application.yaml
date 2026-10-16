@@ -1,0 +1,38 @@
+# The GitOps definition of the app. ArgoCD watches the `deploy` branch, which CI rewrites after
+# every successful publish on main: it is main plus helm/studaura/image.yaml, a file holding the
+# commit SHA of the images to run. Merge to main, CI publishes, CI moves `deploy`, ArgoCD syncs.
+#
+# Apply once:  sed "s#<load-balancer-dns>#$LB#" argocd/application.yaml | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: studaura
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Avishkar74/StudAura.git
+    targetRevision: deploy
+    path: helm/studaura
+    helm:
+      valueFiles:
+        - values.yaml
+        - image.yaml
+      parameters:
+        # Origin the browser uses for the site (the Ingress load balancer's DNS name).
+        - name: backend.config.CORS_ORIGINS
+          value: http://<load-balancer-dns>
+        - name: monitoring.enabled
+          value: "true"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: studaura
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff: { duration: 15s, factor: 2, maxDuration: 3m }
