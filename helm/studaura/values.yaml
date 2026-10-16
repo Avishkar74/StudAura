@@ -66,3 +66,10 @@ ingress:
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
+
+# Needs the Prometheus Operator CRDs (kube-prometheus-stack, see monitoring/). Adds a
+# ServiceMonitor for the backend /metrics endpoint, alert rules and a Grafana dashboard.
+monitoring:
+  enabled: false
+  interval: 30s
+  dashboard: true
