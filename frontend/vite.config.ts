@@ -21,6 +21,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // Playwright specs under e2e/ run with `npm run e2e`, not in Vitest.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     // Generous limits: CI runners and cold starts are slower than a developer machine.
     testTimeout: 20_000,
   },
