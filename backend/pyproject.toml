@@ -34,10 +34,6 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["app*"]
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-
 [tool.ruff]
 line-length = 100
 # Generated migrations are exempt from style checks.
