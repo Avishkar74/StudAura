@@ -1,14 +1,32 @@
-# StudAura
+<h1 align="center">StudAura</h1>
 
-[![CI](https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml/badge.svg)](https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml)
+<p align="center"><b>Watch. Capture. Track. Revise.</b><br>
+A dark-only, YouTube-inspired personal learning workspace, delivered through a complete DevSecOps pipeline.</p>
 
-A dark-only, YouTube-inspired personal learning workspace. Organise YouTube videos and playlists
-into learning paths, watch them embedded, take notes, track progress, set daily goals and manage a
-revision queue. **Watch. Capture. Track. Revise.**
+<p align="center">
+<a href="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml"><img src="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<img src="https://img.shields.io/badge/backend%20tests-656%20passed-34D399" alt="656 backend tests">
+<img src="https://img.shields.io/badge/frontend%20tests-371%20passed-34D399" alt="371 frontend tests">
+<img src="https://img.shields.io/badge/Trivy-0%20fixable%20HIGH%2FCRITICAL-34D399" alt="Trivy clean">
+<img src="https://img.shields.io/badge/Terraform%20%C2%B7%20EKS%20%C2%B7%20Helm%20%C2%B7%20ArgoCD-F21D3D" alt="Terraform, EKS, Helm, ArgoCD">
+</p>
 
-It is also a DevOps capstone: the whole delivery chain (Docker, GitHub Actions, Trivy, GHCR,
-Terraform, EKS, Helm, Prometheus, Grafana) is part of the project. Specs: [`docs/PRD.md`](docs/PRD.md),
-[`docs/TRD.md`](docs/TRD.md). UI mockups: [`docs/ui-reference`](docs/ui-reference).
+<p align="center">
+<a href="#what-the-app-does">The app</a> ·
+<a href="#architecture">Architecture</a> ·
+<a href="#run-it-locally">Run locally</a> ·
+<a href="#cicd">CI/CD</a> ·
+<a href="#infrastructure-and-kubernetes">Infrastructure</a> ·
+<a href="#verification-and-evidence">Evidence</a> ·
+<a href="#known-issues-and-limitations">Limitations</a> ·
+<a href="docs/SUBMISSION.md">Submission guide</a>
+</p>
+
+Organise YouTube videos and playlists into learning paths, watch them embedded, take notes, track
+progress, set daily goals and manage a revision queue. It is also a DevOps capstone: Docker, GitHub
+Actions, Trivy, GHCR, Terraform, EKS, Helm, ArgoCD, Prometheus and Grafana are all part of the
+project. Specs: [`docs/PRD.md`](docs/PRD.md), [`docs/TRD.md`](docs/TRD.md). UI mockups:
+[`docs/ui-reference`](docs/ui-reference). Slides: [`demo/`](demo).
 
 ## What the app does
 
@@ -120,7 +138,7 @@ One workflow, [`.github/workflows/ci.yml`](.github/workflows/ci.yml); details in
 | backend, frontend | PR, main | ruff, mypy, pytest (fails on any skipped test) and ESLint, Prettier, tsc, Vitest, build |
 | terraform, helm | PR, main | fmt, validate, plan tests, `helm lint --strict`, render, Trivy misconfiguration scan |
 | images | PR, main | build both images, check non-root, smoke test |
-| publish | main | Trivy scan (a fixable CRITICAL blocks), push to GHCR **tagged with the commit SHA only** |
+| publish | main | Trivy scan (a fixable HIGH or CRITICAL blocks), push to GHCR **tagged with the commit SHA only** |
 | gitops | main | writes that SHA to the `deploy` branch, which ArgoCD watches and syncs to the cluster |
 | e2e | main | Playwright and axe against the production bundle |
 
@@ -152,47 +170,140 @@ kubectl -n studaura get pods,svc,ingress && helm list -n studaura
 ```
 
 The chart refuses to render without `image.tag`, so a deploy can never fall back to a moving tag.
-**Cost warning:** a running EKS cluster with nodes and a load balancer bills by the hour. Destroy
-it (`terraform destroy`, or delete the node group, the cluster and the load balancer) as soon as
-the evaluation is over.
+**Cost warning:** a running EKS cluster with nodes and a load balancer bills by the hour. Uninstall
+the ingress controller first (its load balancer blocks deleting the VPC), then run
+`terraform destroy`. The cluster used for the evidence below has been destroyed this way.
 
 ## Verification and evidence
 
 Everything below was produced from this repository on a cluster built by `terraform apply`
-(Sydney, `ap-southeast-2`). The full map of rubric items to files is in
+(Sydney, `ap-southeast-2`) and has since been torn down with `terraform destroy`. Click an image
+to open it full size. The map from each rubric item to its files is in
 [`docs/SUBMISSION.md`](docs/SUBMISSION.md); raw command output is in [`docs/evidence`](docs/evidence).
 
 | Check | Result |
 |---|---|
-| Backend tests | 656 passed, [`pytest -v`](docs/evidence/pytest-v.txt) |
-| Frontend tests | 371 passed (Vitest); Playwright + axe: 12 passed against the cluster |
+| Backend tests | **656 passed**, [`pytest -v`](docs/evidence/pytest-v.txt) |
+| Frontend tests | **371 passed** (Vitest); Playwright + axe: 12 passed against the cluster |
 | `docker compose up --build` | db, migrate, backend, frontend up, [output](docs/evidence/docker-compose.txt) |
-| Images in GHCR | commit-SHA tags, [list](docs/evidence/ghcr-tags.txt) |
+| Images in GHCR | commit-SHA tags only, [list](docs/evidence/ghcr-tags.txt) |
 | Trivy | both images clean at HIGH and CRITICAL, [summary](docs/evidence/trivy.txt) |
-| Terraform | 41 resources applied: VPC, 2 public + 2 private subnets, NAT, EKS, node group, add-ons, [state](docs/evidence/terraform.txt) |
+| Terraform | **35 resources** applied and destroyed: VPC, 2 public + 2 private subnets, NAT, EKS, node group, add-ons, [state](docs/evidence/terraform.txt) |
 | Kubernetes | 2 backend + 2 frontend pods Running, ClusterIP Services, Ingress, HPAs, [output](docs/evidence/kubernetes.txt) |
 | ArgoCD | `studaura` Synced and Healthy, running the latest commit's images, [output](docs/evidence/argocd.txt) |
 | Prometheus | 2 of 2 backend targets UP, [output](docs/evidence/observability.txt) |
 
-**The app** on `localhost:3000` (Docker Compose), through the cluster's Ingress, and on a phone:
+#### Running application
 
-![Sign-in page on localhost:3000](docs/screenshots/app-localhost-3000.png)
+<table>
+<tr>
+<td valign="top"><a href="docs/screenshots/app-localhost-3000.png"><img src="docs/screenshots/app-localhost-3000.png" alt="Docker Compose, localhost:3000" width="420"></a><br><sub><b>Docker Compose, localhost:3000</b></sub></td>
+<td valign="top" rowspan="2"><a href="docs/screenshots/app-signup-mobile.png"><img src="docs/screenshots/app-signup-mobile.png" alt="Phone-sized screen" width="230"></a><br><sub><b>Phone-sized screen</b></sub></td>
+</tr>
+<tr>
+<td valign="top"><a href="docs/screenshots/app-login-via-ingress.png"><img src="docs/screenshots/app-login-via-ingress.png" alt="Through the EKS Ingress load balancer" width="420"></a><br><sub><b>Through the EKS Ingress load balancer</b></sub></td>
+</tr>
+</table>
 
-![Sign-in page through the Ingress load balancer](docs/screenshots/app-login-via-ingress.png)
+#### Tests and containers
 
-<img src="docs/screenshots/app-signup-mobile.png" alt="Sign-up page on a phone-sized screen" width="260">
+<table>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/terminal-pytest.png"><img src="docs/screenshots/terminal-pytest.png" alt="pytest -v: 656 passed" width="100%"></a><br><sub><b>pytest -v: 656 passed</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/terminal-compose-up.png"><img src="docs/screenshots/terminal-compose-up.png" alt="docker compose up --build" width="100%"></a><br><sub><b>docker compose up --build</b></sub></td>
+</tr>
+</table>
 
-**Observability.** The backend exposes Prometheus metrics, and Prometheus scrapes both pods:
+#### CI/CD, registry and Git history
 
-![Prometheus targets: both backend pods UP](docs/screenshots/prometheus-targets.png)
+<table>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/github-actions-run.png"><img src="docs/screenshots/github-actions-run.png" alt="Green pipeline run on main" width="100%"></a><br><sub><b>Green pipeline run on main</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/github-actions-runs.png"><img src="docs/screenshots/github-actions-runs.png" alt="Recent CI runs" width="100%"></a><br><sub><b>Recent CI runs</b></sub></td>
+</tr>
+</table>
 
-![Prometheus graph of requests per second by status class](docs/screenshots/prometheus-http-requests.png)
+<table>
+<tr>
+<td valign="top" width="34%"><a href="docs/screenshots/ghcr-backend.png"><img src="docs/screenshots/ghcr-backend.png" alt="GHCR: studaura-backend, SHA tags" width="100%"></a><br><sub><b>GHCR: studaura-backend, SHA tags</b></sub></td>
+<td valign="top" width="33%"><a href="docs/screenshots/ghcr-frontend.png"><img src="docs/screenshots/ghcr-frontend.png" alt="GHCR: studaura-frontend, SHA tags" width="100%"></a><br><sub><b>GHCR: studaura-frontend, SHA tags</b></sub></td>
+<td valign="top" width="33%"><a href="docs/screenshots/commit-history.png"><img src="docs/screenshots/commit-history.png" alt="Commit history" width="100%"></a><br><sub><b>Commit history</b></sub></td>
+</tr>
+</table>
 
-![Backend /metrics output](docs/screenshots/backend-metrics.png)
+#### Security: Trivy
 
-Grafana serves the provisioned StudAura dashboard (request rate, 5xx ratio, p95 latency by route,
-business counters) under `/grafana`; its source is
-[`helm/studaura/dashboards/studaura.json`](helm/studaura/dashboards/studaura.json).
+<table>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/github-trivy-gate.png"><img src="docs/screenshots/github-trivy-gate.png" alt="Trivy step: image, severity HIGH,CRITICAL, ignore-unfixed" width="100%"></a><br><sub><b>Trivy step: image, severity HIGH,CRITICAL, ignore-unfixed</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/github-trivy-run.png"><img src="docs/screenshots/github-trivy-run.png" alt="Scan running against the pushed image" width="100%"></a><br><sub><b>Scan running against the pushed image</b></sub></td>
+</tr>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/trivy-report-backend.png"><img src="docs/screenshots/trivy-report-backend.png" alt="Backend report: 0 vulnerabilities" width="100%"></a><br><sub><b>Backend report: 0 vulnerabilities</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/trivy-report-frontend.png"><img src="docs/screenshots/trivy-report-frontend.png" alt="Frontend report: 0 vulnerabilities" width="100%"></a><br><sub><b>Frontend report: 0 vulnerabilities</b></sub></td>
+</tr>
+</table>
+
+#### Infrastructure: Terraform on AWS (Sydney)
+
+<table>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/aws-vpc.png"><img src="docs/screenshots/aws-vpc.png" alt="VPC resource map: 2 public + 2 private subnets" width="100%"></a><br><sub><b>VPC resource map: 2 public + 2 private subnets</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/aws-subnets.png"><img src="docs/screenshots/aws-subnets.png" alt="Subnets in two availability zones" width="100%"></a><br><sub><b>Subnets in two availability zones</b></sub></td>
+</tr>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/aws-eks-cluster.png"><img src="docs/screenshots/aws-eks-cluster.png" alt="EKS cluster studaura-demo" width="100%"></a><br><sub><b>EKS cluster studaura-demo</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/aws-eks-nodegroup.png"><img src="docs/screenshots/aws-eks-nodegroup.png" alt="Node group: 2 x c7i-flex.large, Ready" width="100%"></a><br><sub><b>Node group: 2 x c7i-flex.large, Ready</b></sub></td>
+</tr>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/terraform-plan.png"><img src="docs/screenshots/terraform-plan.png" alt="terraform plan: 35 to add" width="100%"></a><br><sub><b>terraform plan: 35 to add</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/terraform-destroy.png"><img src="docs/screenshots/terraform-destroy.png" alt="terraform destroy: 35 destroyed" width="100%"></a><br><sub><b>terraform destroy: 35 destroyed</b></sub></td>
+</tr>
+</table>
+
+#### Kubernetes and GitOps (ArgoCD)
+
+<table>
+<tr>
+<td valign="top" width="50%" rowspan="2"><a href="docs/screenshots/terminal-kubectl.png"><img src="docs/screenshots/terminal-kubectl.png" alt="kubectl get pods,svc,ingress -n studaura" width="100%"></a><br><sub><b>kubectl get pods,svc,ingress -n studaura</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/terminal-helm.png"><img src="docs/screenshots/terminal-helm.png" alt="helm list -A" width="100%"></a><br><sub><b>helm list -A</b></sub></td>
+</tr>
+<tr>
+<td valign="top"><a href="docs/screenshots/terminal-argocd-app.png"><img src="docs/screenshots/terminal-argocd-app.png" alt="ArgoCD application: Synced, Healthy" width="100%"></a><br><sub><b>ArgoCD application: Synced, Healthy</b></sub></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td valign="top" width="34%"><a href="docs/screenshots/argocd-applications.png"><img src="docs/screenshots/argocd-applications.png" alt="ArgoCD applications" width="100%"></a><br><sub><b>ArgoCD applications</b></sub></td>
+<td valign="top" width="33%"><a href="docs/screenshots/argocd-application.png"><img src="docs/screenshots/argocd-application.png" alt="Resource tree" width="100%"></a><br><sub><b>Resource tree</b></sub></td>
+<td valign="top" width="33%"><a href="docs/screenshots/argocd-details.png"><img src="docs/screenshots/argocd-details.png" alt="Source: deploy branch" width="100%"></a><br><sub><b>Source: deploy branch</b></sub></td>
+</tr>
+</table>
+
+#### Observability: Prometheus and Grafana
+
+<table>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/prometheus-targets.png"><img src="docs/screenshots/prometheus-targets.png" alt="Targets: 2 of 2 UP" width="100%"></a><br><sub><b>Targets: 2 of 2 UP</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/prometheus-http-requests.png"><img src="docs/screenshots/prometheus-http-requests.png" alt="Live request rate by status class" width="100%"></a><br><sub><b>Live request rate by status class</b></sub></td>
+</tr>
+<tr>
+<td valign="top" width="50%"><a href="docs/screenshots/backend-metrics.png"><img src="docs/screenshots/backend-metrics.png" alt="/metrics in the browser" width="100%"></a><br><sub><b>/metrics in the browser</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/terminal-metrics.png"><img src="docs/screenshots/terminal-metrics.png" alt="/metrics with curl" width="100%"></a><br><sub><b>/metrics with curl</b></sub></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td valign="top"><a href="docs/screenshots/grafana-dashboard.png"><img src="docs/screenshots/grafana-dashboard.png" alt="Grafana dashboard StudAura: pods up, request rate, database, latency by route" width="100%"></a><br><sub><b>Grafana dashboard StudAura: pods up, request rate, database, latency by route</b></sub></td>
+</tr>
+</table>
+
+The Grafana dashboard source is
+[`helm/studaura/dashboards/studaura.json`](helm/studaura/dashboards/studaura.json): pods up,
+requests per second, 5xx ratio, database reachable, status classes, p95 latency by route, requests
+by route and business events.
 
 ## Known issues and limitations
 
@@ -207,7 +318,8 @@ business counters) under `/grafana`; its source is
 * **No automatic rollback of data.** Rollbacks restore the previous image; Alembic migrations are
   forward-only.
 * **Supabase free tier** limits sign-up e-mails; confirmation can be turned off for a demo.
-* **Cost.** The EKS cluster, NAT gateway and nodes bill by the hour until `terraform destroy`.
+* **No live deployment.** To keep AWS costs down the cluster was destroyed after the evidence and the
+  video were captured; the Terraform and Helm steps above recreate it in about 30 minutes.
 * The signed-in E2E specs need a test account and are skipped in CI.
 
 ## Environment variables

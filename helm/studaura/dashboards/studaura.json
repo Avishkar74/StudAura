@@ -129,7 +129,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(http_requests_total{namespace=\"$namespace\", status=\"5xx\"}[5m])) / sum(rate(http_requests_total{namespace=\"$namespace\"}[5m]))",
+          "expr": "(sum(rate(http_requests_total{namespace=\"$namespace\", status=\"5xx\"}[5m])) or vector(0)) / sum(rate(http_requests_total{namespace=\"$namespace\"}[5m]))",
           "legendFormat": "errors"
         }
       ]
@@ -289,7 +289,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(app_import_attempts_total{namespace=\"$namespace\"}[5m])) * 60",
+          "expr": "(sum(rate(app_import_attempts_total{namespace=\"$namespace\"}[5m])) * 60) or vector(0)",
           "legendFormat": "imports"
         },
         {
@@ -298,7 +298,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(app_progress_updates_total{namespace=\"$namespace\"}[5m])) * 60",
+          "expr": "(sum(rate(app_progress_updates_total{namespace=\"$namespace\"}[5m])) * 60) or vector(0)",
           "legendFormat": "progress updates"
         },
         {
@@ -307,7 +307,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(app_viewing_session_pings_total{namespace=\"$namespace\"}[5m])) * 60",
+          "expr": "(sum(rate(app_viewing_session_pings_total{namespace=\"$namespace\"}[5m])) * 60) or vector(0)",
           "legendFormat": "viewing pings"
         },
         {
@@ -316,7 +316,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(app_revision_events_total{namespace=\"$namespace\"}[5m])) * 60",
+          "expr": "(sum(rate(app_revision_events_total{namespace=\"$namespace\"}[5m])) * 60) or vector(0)",
           "legendFormat": "revision events"
         },
         {
@@ -325,7 +325,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(app_note_save_failures_total{namespace=\"$namespace\"}[5m])) * 60",
+          "expr": "(sum(rate(app_note_save_failures_total{namespace=\"$namespace\"}[5m])) * 60) or vector(0)",
           "legendFormat": "note save failures"
         }
       ]
