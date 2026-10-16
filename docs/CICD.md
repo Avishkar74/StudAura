@@ -56,8 +56,7 @@ ESLint and its plugins, and Vitest with jsdom and Testing Library.
 The app is on **React 18**. Major updates of the four React packages are ignored on purpose: React
 19 is a migration of all four together, not a bot bump. When you decide to migrate, delete the
 four `ignore` entries for them, take the single `react` group pull request, and fix any type or
-API errors in that same PR. FastAPI is likewise held below 0.143 until
-`prometheus-fastapi-instrumentator` supports newer releases.
+API errors in that same PR.
 
 ## Trivy policy
 

@@ -17,11 +17,6 @@ updates:
     groups:
       backend:
         update-types: [minor, patch]
-    ignore:
-      # pyproject.toml caps FastAPI below 0.143 on purpose: prometheus-fastapi-instrumentator
-      # breaks on newer releases. Lift this together with the cap once that is fixed upstream.
-      - dependency-name: fastapi
-        versions: [">=0.143"]
 
   - package-ecosystem: npm
     directory: /frontend
