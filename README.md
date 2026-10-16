@@ -23,8 +23,8 @@ A dark-only, YouTube-inspired personal learning workspace, delivered through a c
 <a href="#infrastructure-and-kubernetes">Infrastructure</a> ·
 <a href="#verification-and-evidence">Evidence</a> ·
 <a href="#known-issues-and-limitations">Limitations</a> ·
-<a href="StudAura-presentation-video.mp4">Video</a> ·
-<a href="StudAura-Capstone-App-and-DevOps-presentation.pdf">Slides</a> ·
+<a href="demo/presentation-video.mp4">Video</a> ·
+<a href="demo/slides.pdf">Slides</a> ·
 <a href="SUBMISSION.md">Submission guide</a>
 </p>
 
@@ -33,9 +33,11 @@ progress, set daily goals and manage a revision queue. It is also a DevOps capst
 Actions, Trivy, GHCR, Terraform, EKS, Helm, ArgoCD, Prometheus and Grafana are all part of the
 project.
 
-**Start here:** the [presentation video](StudAura-presentation-video.mp4) (11 minutes), the [slide deck (PDF)](StudAura-Capstone-App-and-DevOps-presentation.pdf) and the [submission guide](SUBMISSION.md), which maps every graded item to its files and screenshots.
+**Start here:** the [presentation video](demo/presentation-video.mp4) (11 minutes), the [slide deck (PDF)](demo/slides.pdf) and the [submission guide](SUBMISSION.md), which maps every graded item to its files and screenshots.
 
 ## Presentation
+
+Video and slides are in [demo/](demo/).
 
 https://github.com/user-attachments/assets/d0814d22-392f-4f3c-900a-99d82651c746
 
