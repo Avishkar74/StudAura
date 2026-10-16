@@ -1,0 +1,33 @@
+# Values for argo/argo-cd. Install:
+#   helm repo add argo https://argoproj.github.io/argo-helm
+#   helm upgrade --install argocd argo/argo-cd --version 10.10.5 -n argocd --create-namespace \
+#     -f argocd/values.yaml
+# Small footprint for a two-node demo cluster; the UI is reached with a port-forward, not exposed.
+dex:
+  enabled: false
+notifications:
+  enabled: false
+applicationSet:
+  enabled: false
+
+configs:
+  params:
+    # TLS is skipped on the in-cluster hop so a port-forward to the server works over plain HTTP.
+    server.insecure: true
+
+controller:
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 512Mi }
+server:
+  resources:
+    requests: { cpu: 25m, memory: 64Mi }
+    limits: { memory: 192Mi }
+repoServer:
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 384Mi }
+redis:
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { memory: 128Mi }

@@ -33,7 +33,7 @@ Browser ──► Ingress (nginx) ─┬─ /          ──► frontend  (ngin
                                                   │  /metrics
                                    Prometheus ◄───┘──► Grafana (/grafana)
 
-GitHub ► Actions: lint + tests + build ► Trivy ► GHCR (SHA tags) ► Helm deploy ► EKS
+GitHub ► Actions: lint + tests + build ► Trivy ► GHCR (SHA tags) ► `deploy` branch ► ArgoCD ► EKS
 ```
 
 | Layer | Technology |
@@ -41,7 +41,7 @@ GitHub ► Actions: lint + tests + build ► Trivy ► GHCR (SHA tags) ► Helm 
 | Frontend | React, Vite, TypeScript, Tailwind CSS v4, TanStack Query, TipTap |
 | Backend | FastAPI, SQLAlchemy 2 (async), Alembic, python-jose (JWT/JWKS), nh3 |
 | Data | PostgreSQL (Supabase in the cloud, a container locally) |
-| Delivery | Docker (multi-stage, non-root), GitHub Actions, Trivy, GHCR, Terraform, Helm, EKS |
+| Delivery | Docker (multi-stage, non-root), GitHub Actions, Trivy, GHCR, Terraform, Helm, ArgoCD (GitOps), EKS |
 | Observability | `prometheus-fastapi-instrumentator`, kube-prometheus-stack, Grafana |
 
 REST API under `/api/v1`: `me`, `learning-paths`, `videos`, `playlists`, `notes`, `comments`,
@@ -120,10 +120,10 @@ One workflow, [`.github/workflows/ci.yml`](.github/workflows/ci.yml); details in
 | terraform, helm | PR, main | fmt, validate, plan tests, `helm lint --strict`, render, Trivy misconfiguration scan |
 | images | PR, main | build both images, check non-root, smoke test |
 | publish | main | Trivy scan (a fixable CRITICAL blocks), push to GHCR **tagged with the commit SHA only** |
-| deploy | main, when enabled | `helm upgrade --install --rollback-on-failure` on EKS with that SHA |
+| gitops | main | writes that SHA to the `deploy` branch, which ArgoCD watches and syncs to the cluster |
 | e2e | main | Playwright and axe against the production bundle |
 
-Security: images are scanned with Trivy before they are pushed; third-party actions are pinned to
+Security: images are scanned with Trivy before they are pushed and a fixable HIGH or CRITICAL blocks the push; third-party actions are pinned to
 commit SHAs; secrets are never in Git (`.gitignore` covers `.env`, `*.pem`, `*.tfvars`, state).
 
 ## Infrastructure and Kubernetes
@@ -131,12 +131,13 @@ commit SHAs; secrets are never in Git (`.gitignore` covers `.env`, `*.pem`, `*.t
 | Path | What |
 |---|---|
 | [`deploy/terraform`](deploy/terraform/README.md) | VPC with public and private subnets, EKS cluster, managed node group, GitHub OIDC role; `terraform.tfvars.example`; plan tests run in CI without AWS credentials |
-| [`k8s`](k8s) | `namespace.yaml`, and the namespace-scoped identity the CI deploy job uses |
+| [`k8s`](k8s) | `namespace.yaml` (Pod Security labels) |
+| [`argocd`](argocd) | Argo CD values and the `Application` that syncs `helm/studaura` from the `deploy` branch (automated, prune, self-heal) |
 | [`helm/studaura`](helm/studaura) | Chart: backend and frontend Deployments (2 replicas, HPA, anti-affinity, non-root, read-only root filesystem, probes), ClusterIP Services, Ingress (`/` to the frontend, `/api` to the backend), PodDisruptionBudgets, an Alembic hook Job, and optional ServiceMonitor, alert rules and Grafana dashboard |
 | [`monitoring`](monitoring/README.md) | kube-prometheus-stack values; Grafana is served under `/grafana` |
 | [`deploy/ec2`](deploy/ec2/README.md) | The same app on a single EC2 instance with Docker Compose, for accounts that cannot create an EKS cluster |
 
-Deploy to a cluster:
+Deploy to a cluster by hand (ArgoCD does the same thing automatically, see [`docs/CICD.md`](docs/CICD.md)):
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
@@ -153,6 +154,22 @@ The chart refuses to render without `image.tag`, so a deploy can never fall back
 **Cost warning:** a running EKS cluster with nodes and a load balancer bills by the hour. Destroy
 it (`terraform destroy`, or delete the node group, the cluster and the load balancer) as soon as
 the evaluation is over.
+
+## Known issues and limitations
+
+* **HTTP only.** The Ingress serves plain HTTP on the load balancer's DNS name; there is no
+  domain or certificate. Supabase accepts an `http://` site URL, but a production setup would add
+  cert-manager and a domain.
+* **Region latency.** The database is a Supabase project in Mumbai; the cluster runs in Sydney, so
+  every query pays about 260 ms. The backend tolerates it (a longer readiness timeout and a pool
+  warm-up) but pages are slower than they would be next to the database.
+* **Prometheus data is ephemeral.** No persistent volumes are configured, so metrics are lost
+  when the Prometheus pod moves; Grafana dashboards are provisioned from Git and survive.
+* **No automatic rollback of data.** Rollbacks restore the previous image; Alembic migrations are
+  forward-only.
+* **Supabase free tier** limits sign-up e-mails; confirmation can be turned off for a demo.
+* **Cost.** The EKS cluster, NAT gateway and nodes bill by the hour until `terraform destroy`.
+* The signed-in E2E specs need a test account and are skipped in CI.
 
 ## Environment variables
 
