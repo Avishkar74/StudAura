@@ -120,7 +120,7 @@ One workflow, [`.github/workflows/ci.yml`](.github/workflows/ci.yml); details in
 | terraform, helm | PR, main | fmt, validate, plan tests, `helm lint --strict`, render, Trivy misconfiguration scan |
 | images | PR, main | build both images, check non-root, smoke test |
 | publish | main | Trivy scan (a fixable CRITICAL blocks), push to GHCR **tagged with the commit SHA only** |
-| deploy | main, when enabled | `helm upgrade --install --atomic` on EKS with that SHA |
+| deploy | main, when enabled | `helm upgrade --install --rollback-on-failure` on EKS with that SHA |
 | e2e | main | Playwright and axe against the production bundle |
 
 Security: images are scanned with Trivy before they are pushed; third-party actions are pinned to

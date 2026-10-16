@@ -18,7 +18,7 @@ About 10 minutes. Have these open before you start: the repository's Actions tab
    Helm, images). Merge it.
 3. Open the run on `main`: show the **publish** job (Trivy scan, then the push to GHCR) and the
    image tag, which is the commit SHA.
-4. Show **deploy**: `helm upgrade --install --atomic`.
+4. Show **deploy**: `helm upgrade --install --rollback-on-failure`.
 5. In the terminal:
 
    ```bash
@@ -42,7 +42,7 @@ kubectl -n monitoring get pods
 * `kubectl -n studaura port-forward deploy/studaura-backend 8000:8000` and open
   `http://localhost:8000/metrics`.
 * Mention the safety rails: Trivy gates the publish, the migration runs as a one-shot hook Job,
-  `--atomic` rolls back a failed rollout, secrets live in the cluster and never in Git.
+  `--rollback-on-failure` rolls back a failed rollout, secrets live in the cluster and never in Git.
 
 ## 4. Tear down (after the evaluation)
 
