@@ -1,10 +1,13 @@
-<h1 align="center">StudAura</h1>
+<h1 align="center"><a href="https://stud-aura.vercel.app/">StudAura</a></h1>
+
+<p align="center"><a href="https://stud-aura.vercel.app/"><b>Live app: stud-aura.vercel.app</b></a></p>
 
 <p align="center"><b>Watch. Capture. Track. Revise.</b><br>
 A dark-only, YouTube-inspired personal learning workspace, delivered through a complete DevSecOps pipeline.</p>
 
 <p align="center">
 <a href="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml"><img src="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<a href="https://stud-aura.vercel.app/"><img src="https://img.shields.io/badge/live%20demo-stud--aura.vercel.app-F21D3D" alt="Live demo"></a>
 <img src="https://img.shields.io/badge/backend%20tests-656%20passed-34D399" alt="656 backend tests">
 <img src="https://img.shields.io/badge/frontend%20tests-371%20passed-34D399" alt="371 frontend tests">
 <img src="https://img.shields.io/badge/Trivy-0%20fixable%20HIGH%2FCRITICAL-34D399" alt="Trivy clean">
@@ -12,6 +15,7 @@ A dark-only, YouTube-inspired personal learning workspace, delivered through a c
 </p>
 
 <p align="center">
+<a href="https://stud-aura.vercel.app/">Live app</a> ·
 <a href="#what-the-app-does">The app</a> ·
 <a href="#architecture">Architecture</a> ·
 <a href="#run-it-locally">Run locally</a> ·
