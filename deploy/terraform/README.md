@@ -29,7 +29,6 @@ is the Helm chart's job (M17).
 | `network.tf` | VPC, internet gateway, public and private subnets in 2 or 3 zones, NAT gateway, route tables, flow logs |
 | `eks.tf` | EKS cluster (secrets encrypted with a KMS key, all control-plane logs, pinned to standard support), the IAM identity provider for pod roles (IRSA), admin access entries, add-ons (VPC CNI, kube-proxy, CoreDNS, metrics-server) |
 | `nodes.tf` | Managed node group: IMDSv2 only, encrypted volumes, one node replaced at a time |
-| `github.tf` | A role GitHub Actions can assume with OIDC (no stored AWS keys), limited to the app namespace |
 | `bootstrap/` | The private, encrypted, versioned S3 bucket that holds the state. Run once first |
 | `tests/` | Offline plan tests (`terraform test`): no AWS account needed |
 
@@ -87,22 +86,17 @@ aws eks describe-cluster-versions --region ap-south-1 --query "clusterVersions[?
 ```powershell
 Invoke-Expression (terraform output -raw update_kubeconfig_command)   # writes ~/.kube/config
 kubectl get nodes                                     # two nodes, Ready
-kubectl create namespace studaura                     # once; the deploy role works inside it
+kubectl apply -f ../../k8s/namespace.yaml             # once
 ```
 
 `terraform apply` made the identity that ran it a cluster admin. To give someone else access, add
 their ARN to `cluster_admin_principal_arns` and apply again.
 
-## 5. Let GitHub Actions deploy
+## 5. Deploying the app
 
-`terraform output github_deploy_role_arn` is the role the deploy workflow assumes. Store it as a
-repository **variable** (not a secret; it is not sensitive) named `AWS_DEPLOY_ROLE_ARN`, and the
-region as `AWS_REGION`. The role can be assumed only by workflows on the `main` branch of
-`Avishkar74/StudAura` (change `github_oidc_subjects` to allow more), and inside the cluster it can
-administer only the `studaura` namespace.
-
-Installing cluster-wide components (the ingress controller, monitoring) needs more than that, so do
-those yourself once with your own admin access.
+Terraform stops at the cluster. The application is delivered by ArgoCD (see `argocd/` and
+`docs/CICD.md`), so no AWS credentials or IAM role for CI are needed. The cluster-wide components
+(ingress controller, monitoring, ArgoCD) are installed once with your own admin access.
 
 ## Cost
 

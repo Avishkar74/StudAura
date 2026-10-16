@@ -97,6 +97,8 @@ resource "aws_eks_cluster" "main" {
 # --- Identity provider for pod roles (IRSA) ---------------------------------------------------------
 
 resource "aws_iam_openid_connect_provider" "eks" {
+  count = var.enable_irsa ? 1 : 0
+
   url            = aws_eks_cluster.main.identity[0].oidc[0].issuer
   client_id_list = ["sts.amazonaws.com"]
 }

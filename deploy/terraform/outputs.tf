@@ -34,16 +34,11 @@ output "private_subnet_ids" {
 }
 
 output "oidc_provider_arn" {
-  description = "OIDC provider of the cluster, for pod roles (IRSA) such as the ones monitoring may need."
-  value       = aws_iam_openid_connect_provider.eks.arn
-}
-
-output "github_deploy_role_arn" {
-  description = "Role for GitHub Actions to assume with aws-actions/configure-aws-credentials."
-  value       = aws_iam_role.github_deploy.arn
+  description = "OIDC provider of the cluster for pod roles (IRSA); null unless enable_irsa is set."
+  value       = one(aws_iam_openid_connect_provider.eks[*].arn)
 }
 
 output "app_namespace" {
-  description = "Namespace the deploy role may use. Create it once: kubectl create namespace <this>."
+  description = "Namespace the application runs in (apply k8s/namespace.yaml)."
   value       = var.app_namespace
 }

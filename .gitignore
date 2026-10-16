@@ -26,7 +26,7 @@ coverage/
 *.tfvars
 deploy/terraform/backend.hcl
 deploy/terraform/backend_override.tf
-deploy/terraform/tfplan
+deploy/terraform/tfplan*
 deploy/terraform/apply.*
 
 # OS / editor
