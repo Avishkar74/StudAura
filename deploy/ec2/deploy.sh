@@ -60,6 +60,10 @@ for i in $(seq 1 30); do
   fi
   sleep 3
 done
-echo "Not ready after 90 s. Is inbound port 80 open in the instance's security group?" >&2
-"${SSH[@]}" "cd ~/$REMOTE_DIR && sudo docker compose ps && sudo docker compose logs --tail=30" >&2 || true
+echo "Not reachable from here after 90 s." >&2
+echo "Checking from inside the instance (if this passes, inbound port 80 is closed in the" >&2
+echo "instance's security group):" >&2
+"${SSH[@]}" "curl -s -m 20 -w ' (HTTP %{http_code})
+' http://127.0.0.1/ready" >&2 || true
+"${SSH[@]}" "cd ~/$REMOTE_DIR && sudo TAG=$TAG docker compose ps && sudo TAG=$TAG docker compose logs --tail=30" >&2 || true
 exit 1
