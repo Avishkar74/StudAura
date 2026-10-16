@@ -330,8 +330,8 @@ jobs:
             VITE_SUPABASE_ANON_KEY=${{ vars.VITE_SUPABASE_ANON_KEY }}
             VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
           cache-from: type=gha,scope=${{ matrix.image }}
-      # Policy: CRITICAL vulnerabilities that have a fix block publishing. HIGH and below are
-      # reported in the artifacts and reviewed, but do not block (docs/CICD.md).
+      # Policy: HIGH and CRITICAL vulnerabilities that have a fix block publishing; unfixed ones
+      # and lower severities are reported in the artifacts (docs/CICD.md).
       - name: Trivy report (machine-readable, all severities)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -348,12 +348,12 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "0"
-      - name: Trivy gate (fails on fixable CRITICAL)
+      - name: Trivy gate (fails on fixable HIGH or CRITICAL)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ steps.name.outputs.repo }}:${{ github.sha }}
           format: table
-          severity: CRITICAL
+          severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
       - name: Keep the Trivy reports

@@ -200,7 +200,7 @@ studaura/
 │   ├── terraform/
 │   ├── prometheus/
 │   └── grafana/
-├── compose.yaml
+├── docker-compose.yml
 ├── .env.example
 ├── .github/workflows/
 └── README.md

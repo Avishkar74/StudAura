@@ -138,7 +138,7 @@ studaura/
 │   ├── terraform/
 │   ├── prometheus/
 │   └── grafana/
-├── compose.yaml
+├── docker-compose.yml
 ├── .env.example
 └── .github/workflows/
 ```
@@ -734,7 +734,7 @@ Configure `CORS_ORIGINS` as an explicit allowlist. Do not use `*` in production.
 | `prometheus` *(optional)* | Scrape backend metrics; useful for local observability demo |
 | `grafana` *(optional)* | Dashboard; provision via config file |
 
-### 12.2 compose.yaml Requirements
+### 12.2 docker-compose.yml Requirements
 
 - Services communicate by service DNS name (not `localhost`).
 - `backend` depends on `db` with `condition: service_healthy`.

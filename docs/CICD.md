@@ -63,8 +63,7 @@ API errors in that same PR. FastAPI is likewise held below 0.136 until
 
 | Severity | Behaviour |
 |---|---|
-| CRITICAL with a fix available | **Blocks publishing.** The `publish` job fails before anything is pushed. |
-| HIGH | Reported in the artifacts; reviewed, does not block. |
+| HIGH or CRITICAL with a fix available | **Blocks publishing.** The `publish` job fails before anything is pushed. |
 | MEDIUM and below | In the JSON report only. |
 | Unfixed vulnerabilities | Ignored by the gate (nothing can be done yet) but present in the JSON report. |
 
@@ -81,7 +80,7 @@ locally the same way CI does:
 
 ```bash
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
-  image --severity CRITICAL --ignore-unfixed studaura-frontend:local
+  image --severity HIGH,CRITICAL --ignore-unfixed studaura-frontend:local
 ```
 
 Terraform is scanned by the same tool (`trivy config`) with the same bar: HIGH and CRITICAL
