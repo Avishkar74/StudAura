@@ -1,0 +1,60 @@
+$ kubectl get pods -n monitoring
+NAME                                                   READY   STATUS    RESTARTS   AGE
+monitoring-grafana-5696477f8c-rldgm                    3/3     Running   0          29m
+monitoring-kube-prometheus-operator-7f4b7b674b-7fztv   1/1     Running   0          29m
+monitoring-kube-state-metrics-5b4665c645-wnfs7         1/1     Running   0          29m
+monitoring-prometheus-node-exporter-2ntmc              1/1     Running   0          29m
+monitoring-prometheus-node-exporter-ljzkj              1/1     Running   0          29m
+prometheus-monitoring-kube-prometheus-prometheus-0     2/2     Running   0          29m
+
+$ kubectl get servicemonitor,prometheusrule -n studaura
+NAME                                                    AGE
+servicemonitor.monitoring.coreos.com/studaura-backend   26m
+
+NAME                                            AGE
+prometheusrule.monitoring.coreos.com/studaura   26m
+
+$ curl http://<backend-pod>:8000/metrics | head -40
+# HELP python_gc_objects_collected_total Objects collected during gc
+# TYPE python_gc_objects_collected_total counter
+python_gc_objects_collected_total{generation="0"} 378.0
+python_gc_objects_collected_total{generation="1"} 47.0
+python_gc_objects_collected_total{generation="2"} 16.0
+# HELP python_gc_objects_uncollectable_total Uncollectable objects found during GC
+# TYPE python_gc_objects_uncollectable_total counter
+python_gc_objects_uncollectable_total{generation="0"} 0.0
+python_gc_objects_uncollectable_total{generation="1"} 0.0
+python_gc_objects_uncollectable_total{generation="2"} 0.0
+# HELP python_gc_collections_total Number of times this generation was collected
+# TYPE python_gc_collections_total counter
+python_gc_collections_total{generation="0"} 238.0
+python_gc_collections_total{generation="1"} 21.0
+python_gc_collections_total{generation="2"} 1.0
+# HELP python_info Python platform information
+# TYPE python_info gauge
+python_info{implementation="CPython",major="3",minor="12",patchlevel="15",version="3.12.15"} 1.0
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 2.92855808e+08
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 9.85088e+07
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.79213900165e+09
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 21.13
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 20.0
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 1.048576e+06
+# HELP app_import_attempts_total Video/playlist import attempts
+# TYPE app_import_attempts_total counter
+# HELP app_note_save_failures_total Failed note autosaves
+# TYPE app_note_save_failures_total counter
+...
+db_readiness 0.0
+http_requests_total{handler="none",method="GET",status="4xx"} 1.0

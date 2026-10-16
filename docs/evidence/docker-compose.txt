@@ -1,0 +1,9 @@
+$ docker compose ps
+SERVICE    IMAGE                STATUS                 PORTS
+backend    studaura-backend     Up 3 seconds           0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+db         postgres:16-alpine   Up 5 hours (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+frontend   studaura-frontend    Up 3 seconds           0.0.0.0:5173->5173/tcp, [::]:5173->5173/tcp, 0.0.0.0:3000->5173/tcp, [::]:3000->5173/tcp
+
+GET http://localhost:8000/health -> 200
+GET http://localhost:8000/ready  -> 200
+GET http://localhost:3000/       -> 200

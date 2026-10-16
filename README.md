@@ -91,6 +91,7 @@ npm run lint && npm run typecheck && npm test         # ESLint, tsc, Vitest (371
 npm run e2e                                           # Playwright + axe accessibility (see below)
 ```
 
+* **656 backend tests pass** ([`pytest -v` output](docs/evidence/pytest-v.txt)).
 * Backend tests use a **throwaway PostgreSQL database** created per test run (never the real
   one) and a **fake YouTube adapter** with recorded fixtures, so CI never calls the YouTube API.
   The Alembic migration test upgrades from an empty database. Config: `backend/pytest.ini`,
@@ -130,7 +131,7 @@ commit SHAs; secrets are never in Git (`.gitignore` covers `.env`, `*.pem`, `*.t
 
 | Path | What |
 |---|---|
-| [`deploy/terraform`](deploy/terraform/README.md) | VPC with public and private subnets, EKS cluster, managed node group, GitHub OIDC role; `terraform.tfvars.example`; plan tests run in CI without AWS credentials |
+| [`deploy/terraform`](deploy/terraform/README.md) | VPC with public and private subnets, EKS cluster, managed node group, add-ons; `terraform.tfvars.example`; plan tests run in CI without AWS credentials |
 | [`k8s`](k8s) | `namespace.yaml` (Pod Security labels) |
 | [`argocd`](argocd) | Argo CD values and the `Application` that syncs `helm/studaura` from the `deploy` branch (automated, prune, self-heal) |
 | [`helm/studaura`](helm/studaura) | Chart: backend and frontend Deployments (2 replicas, HPA, anti-affinity, non-root, read-only root filesystem, probes), ClusterIP Services, Ingress (`/` to the frontend, `/api` to the backend), PodDisruptionBudgets, an Alembic hook Job, and optional ServiceMonitor, alert rules and Grafana dashboard |
@@ -154,6 +155,44 @@ The chart refuses to render without `image.tag`, so a deploy can never fall back
 **Cost warning:** a running EKS cluster with nodes and a load balancer bills by the hour. Destroy
 it (`terraform destroy`, or delete the node group, the cluster and the load balancer) as soon as
 the evaluation is over.
+
+## Verification and evidence
+
+Everything below was produced from this repository on a cluster built by `terraform apply`
+(Sydney, `ap-southeast-2`). The full map of rubric items to files is in
+[`docs/SUBMISSION.md`](docs/SUBMISSION.md); raw command output is in [`docs/evidence`](docs/evidence).
+
+| Check | Result |
+|---|---|
+| Backend tests | 656 passed, [`pytest -v`](docs/evidence/pytest-v.txt) |
+| Frontend tests | 371 passed (Vitest); Playwright + axe: 12 passed against the cluster |
+| `docker compose up --build` | db, migrate, backend, frontend up, [output](docs/evidence/docker-compose.txt) |
+| Images in GHCR | commit-SHA tags, [list](docs/evidence/ghcr-tags.txt) |
+| Trivy | both images clean at HIGH and CRITICAL, [summary](docs/evidence/trivy.txt) |
+| Terraform | 41 resources applied: VPC, 2 public + 2 private subnets, NAT, EKS, node group, add-ons, [state](docs/evidence/terraform.txt) |
+| Kubernetes | 2 backend + 2 frontend pods Running, ClusterIP Services, Ingress, HPAs, [output](docs/evidence/kubernetes.txt) |
+| ArgoCD | `studaura` Synced and Healthy, running the latest commit's images, [output](docs/evidence/argocd.txt) |
+| Prometheus | 2 of 2 backend targets UP, [output](docs/evidence/observability.txt) |
+
+**The app** on `localhost:3000` (Docker Compose), through the cluster's Ingress, and on a phone:
+
+![Sign-in page on localhost:3000](docs/screenshots/app-localhost-3000.png)
+
+![Sign-in page through the Ingress load balancer](docs/screenshots/app-login-via-ingress.png)
+
+<img src="docs/screenshots/app-signup-mobile.png" alt="Sign-up page on a phone-sized screen" width="260">
+
+**Observability.** The backend exposes Prometheus metrics, and Prometheus scrapes both pods:
+
+![Prometheus targets: both backend pods UP](docs/screenshots/prometheus-targets.png)
+
+![Prometheus graph of requests per second by status class](docs/screenshots/prometheus-http-requests.png)
+
+![Backend /metrics output](docs/screenshots/backend-metrics.png)
+
+Grafana serves the provisioned StudAura dashboard (request rate, 5xx ratio, p95 latency by route,
+business counters) under `/grafana`; its source is
+[`helm/studaura/dashboards/studaura.json`](helm/studaura/dashboards/studaura.json).
 
 ## Known issues and limitations
 

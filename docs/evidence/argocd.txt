@@ -1,0 +1,16 @@
+$ kubectl -n argocd get application studaura
+NAME       SYNC STATUS   HEALTH STATUS
+studaura   Synced        Healthy
+
+$ kubectl -n studaura get deploy -o wide (image tag = commit SHA)
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                                          SELECTOR
+studaura-backend    2/2     2            2           26m   backend      ghcr.io/avishkar74/studaura-backend:90c2deb48778ef24d82b9f30212a116204f0c7cb    app.kubernetes.io/component=backend,app.kubernet
+studaura-frontend   2/2     2            2           26m   frontend     ghcr.io/avishkar74/studaura-frontend:90c2deb48778ef24d82b9f30212a116204f0c7cb   app.kubernetes.io/component=frontend,app.kuberne
+
+$ kubectl get pods -n argocd
+NAME                                               READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                    1/1     Running   0          27m
+argocd-applicationset-controller-b87cc84b4-vznp4   1/1     Running   0          27m
+argocd-redis-b6d598b56-f4pks                       1/1     Running   0          27m
+argocd-repo-server-746f99ddff-cjwf6                1/1     Running   0          27m
+argocd-server-5c6764df64-pkgf5                     1/1     Running   0          27m
