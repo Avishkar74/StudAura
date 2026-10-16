@@ -19,7 +19,9 @@ push to main ──► backend ─┐
 | `frontend` | PR, main | Node from `frontend/.nvmrc`, then `npm ci`, `eslint`, `prettier --check`, `tsc`, `vitest`, `vite build`. |
 | `terraform` | PR, main | `terraform fmt -check`, `init -backend=false -lockfile=readonly` and `validate` for the infrastructure and the state-bucket bootstrap, `terraform test` (plan tests with the AWS provider mocked, so no credentials), and a Trivy misconfiguration scan that fails on HIGH or CRITICAL. No AWS account is involved. |
 | `images` (backend, frontend) | PR, main | Builds the production image (backend `runtime` stage, frontend `prod` stage), checks it runs as a non-root user, starts it and smoke-tests it: backend `GET /health`, `/metrics`, and `/ready` answering 503 with no database; frontend `/healthz`, `/`, a deep link falling back to the SPA, and the security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) on the page. |
-| `publish` (backend, frontend) | main only, after the three above | Builds, scans with Trivy, then pushes `ghcr.io/<owner>/studaura-backend` and `studaura-frontend`, tagged with the commit SHA and `latest`. |
+| `publish` (backend, frontend) | main only, after the three above | Builds, scans with Trivy, then pushes `ghcr.io/<owner>/studaura-backend` and `studaura-frontend`, tagged with the commit SHA only (never `latest`). |
+| `helm` | PR, main | Installs a pinned, checksum-verified Helm, runs `helm lint --strict`, checks that the chart refuses to render without `image.tag`, renders it with monitoring on and scans the rendered manifests with Trivy (HIGH and CRITICAL fail). |
+| `deploy` | main only, after `publish`, when `DEPLOY_ENABLED=true` | `helm upgrade --install --atomic --wait` of the chart on EKS with this commit's SHA as `image.tag`; the migration runs as a pre-upgrade hook Job. A failed rollout rolls back. |
 
 Third-party actions are pinned to commit SHAs (the version is in a comment). Jobs get read-only
 `contents` access; only `publish` gets `packages: write`, and pull requests never reach it.
@@ -134,3 +136,23 @@ docker run --rm -p 8080:8080 studaura-frontend:local                   # then GE
 - E2E tests with Playwright on main (TRD 17): added with the accessibility and E2E pass (M19).
 - The Helm deploy and the post-deploy smoke test (M17) will extend this workflow. They will assume
   the role from `deploy/terraform` through GitHub OIDC, with no stored AWS keys.
+
+## Deploying to the cluster from CI
+
+The `deploy` job uses a Kubernetes ServiceAccount limited to the `studaura` namespace, so no AWS
+keys are stored in GitHub. One-time setup, from a terminal that can already run `kubectl`:
+
+```bash
+kubectl apply -f k8s/ci-deployer.yaml
+NS=studaura
+gh secret set KUBE_SERVER  --body "$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+gh secret set KUBE_CA_DATA --body "$(kubectl config view --minify --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')"
+kubectl -n $NS get secret ci-deployer-token -o jsonpath='{.data.token}' | base64 -d | gh secret set KUBE_TOKEN
+gh variable set PUBLIC_ORIGIN --body "http://<load-balancer-dns-name>"
+gh variable set MONITORING_ENABLED --body true
+gh variable set DEPLOY_ENABLED --body true
+```
+
+The runtime Secret `studaura-secrets` (database URL, Supabase URL, YouTube key) is created in the
+cluster by hand and never passes through GitHub. Tear down with `terraform destroy` (or delete the
+cluster) when the evaluation is over, and set `DEPLOY_ENABLED` back to `false`.
