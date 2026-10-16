@@ -23,17 +23,16 @@ A dark-only, YouTube-inspired personal learning workspace, delivered through a c
 <a href="#infrastructure-and-kubernetes">Infrastructure</a> ·
 <a href="#verification-and-evidence">Evidence</a> ·
 <a href="#known-issues-and-limitations">Limitations</a> ·
-<a href="StudAura-presentation.pptx">Slides</a> ·
+<a href="StudAura-Capstone-App-and-DevOps-presentation.pdf">Slides</a> ·
 <a href="SUBMISSION.md">Submission guide</a>
 </p>
 
 Organise YouTube videos and playlists into learning paths, watch them embedded, take notes, track
 progress, set daily goals and manage a revision queue. It is also a DevOps capstone: Docker, GitHub
 Actions, Trivy, GHCR, Terraform, EKS, Helm, ArgoCD, Prometheus and Grafana are all part of the
-project. Specs: [`docs/PRD.md`](docs/PRD.md), [`docs/TRD.md`](docs/TRD.md). UI mockups:
-[`docs/ui-reference`](docs/ui-reference).
+project.
 
-**Start here:** the [slide deck (PPTX)](StudAura-presentation.pptx) and the [submission guide](SUBMISSION.md), which maps every graded item to its files and screenshots.
+**Start here:** the [slide deck (PDF)](StudAura-Capstone-App-and-DevOps-presentation.pdf) and the [submission guide](SUBMISSION.md), which maps every graded item to its files and screenshots.
 
 <p align="center">
 <a href="docs/screenshots/landing-desktop.png"><img src="docs/screenshots/landing-hero.png" alt="StudAura landing page" width="860"></a>
