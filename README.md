@@ -35,7 +35,7 @@ project.
 
 **Start here:** the [presentation video](StudAura-presentation-video.mp4) (11 minutes), the [slide deck (PDF)](StudAura-Capstone-App-and-DevOps-presentation.pdf) and the [submission guide](SUBMISSION.md), which maps every graded item to its files and screenshots.
 
-## Demo
+## Presentation
 
 https://github.com/user-attachments/assets/d0814d22-392f-4f3c-900a-99d82651c746
 
