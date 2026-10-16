@@ -28,6 +28,10 @@ Actions, Trivy, GHCR, Terraform, EKS, Helm, ArgoCD, Prometheus and Grafana are a
 project. Specs: [`docs/PRD.md`](docs/PRD.md), [`docs/TRD.md`](docs/TRD.md). UI mockups:
 [`docs/ui-reference`](docs/ui-reference). Slides: [`demo/`](demo).
 
+<p align="center">
+<a href="docs/screenshots/landing-desktop.png"><img src="docs/screenshots/landing-hero.png" alt="StudAura landing page" width="860"></a>
+</p>
+
 ## What the app does
 
 | Area | What you can do |
