@@ -58,14 +58,79 @@ it from the verified token and filters every query by it.
 
 ## Architecture
 
-```
-Browser ──► Ingress (nginx) ─┬─ /          ──► frontend  (nginx, React SPA)       ×2
-                             └─ /api ...   ──► backend   (FastAPI)                ×2 ──► PostgreSQL (Supabase)
-                                                  │  /metrics
-                                   Prometheus ◄───┘──► Grafana (/grafana)
+### Runtime architecture
 
-GitHub ► Actions: lint + tests + build ► Trivy ► GHCR (SHA tags) ► `deploy` branch ► ArgoCD ► EKS
+How a request flows through the application, as deployed on Kubernetes (EKS):
+
+```mermaid
+flowchart LR
+    user(["Browser"])
+    auth["Supabase Auth"]
+    yt["YouTube<br/>IFrame player and Data API"]
+
+    subgraph cluster["Kubernetes cluster (EKS)"]
+        direction LR
+        ing["ingress-nginx<br/>AWS load balancer"]
+        fe["Frontend x2<br/>nginx + React SPA"]
+        be["Backend x2<br/>FastAPI"]
+        prom["Prometheus"]
+        graf["Grafana"]
+    end
+
+    db[("PostgreSQL<br/>Supabase")]
+
+    user -->|"sign in and tokens"| auth
+    user -->|"plays videos"| yt
+    user -->|"HTTP"| ing
+    ing -->|"/"| fe
+    ing -->|"/api"| be
+    be -->|"SQLAlchemy and Alembic"| db
+    be -->|"server-side metadata"| yt
+    prom -->|"scrapes /metrics"| be
+    graf -->|"queries"| prom
 ```
+
+The backend never trusts a user id from the client: it verifies the Supabase JWT against the
+project's public keys and filters every query by the id inside it.
+
+### Delivery pipeline
+
+From a commit to a running cluster, with no cluster credentials stored in CI:
+
+```mermaid
+flowchart LR
+    dev(["Developer"]) -->|"pull request"| gh["GitHub"]
+
+    subgraph ci["GitHub Actions"]
+        direction LR
+        check["Lint, type check,<br/>tests, build"]
+        img["Build images<br/>(non-root)"]
+        trivy["Trivy scan<br/>HIGH and CRITICAL fail"]
+        check --> img --> trivy
+    end
+
+    gh --> check
+    trivy -->|"merge to main"| ghcr[("GHCR<br/>commit-SHA tags")]
+    ghcr --> branch["deploy branch<br/>image tag"]
+    branch -->|"watched by"| argo["ArgoCD<br/>auto-sync, self-heal"]
+    argo -->|"Helm chart"| eks["EKS cluster"]
+
+    tf["Terraform"] -.->|"VPC, subnets,<br/>EKS, node group"| eks
+```
+
+### Live hosting
+
+The public site at [stud-aura.vercel.app](https://stud-aura.vercel.app/) uses a lighter setup:
+
+```mermaid
+flowchart LR
+    user(["Browser"]) -->|"HTTPS"| vercel["Vercel<br/>static React app"]
+    vercel -->|"/api rewrite<br/>HTTP"| ec2["EC2 instance<br/>nginx + FastAPI<br/>Docker Compose"]
+    ec2 --> db[("PostgreSQL<br/>Supabase")]
+    user -->|"sign in"| auth["Supabase Auth"]
+```
+
+### Stack
 
 | Layer | Technology |
 |---|---|
