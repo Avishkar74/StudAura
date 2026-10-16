@@ -8,8 +8,8 @@ A dark-only, YouTube-inspired personal learning workspace, delivered through a c
 <p align="center">
 <a href="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml"><img src="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 <a href="https://stud-aura.vercel.app/"><img src="https://img.shields.io/badge/live%20app-stud--aura.vercel.app-F21D3D" alt="Live app"></a>
-<img src="https://img.shields.io/badge/backend%20tests-656%20passed-34D399" alt="656 backend tests">
-<img src="https://img.shields.io/badge/frontend%20tests-371%20passed-34D399" alt="371 frontend tests">
+<img src="https://img.shields.io/badge/backend%20tests-674%20passed-34D399" alt="674 backend tests">
+<img src="https://img.shields.io/badge/frontend%20tests-425%20passed-34D399" alt="425 frontend tests">
 <img src="https://img.shields.io/badge/Trivy-0%20fixable%20HIGH%2FCRITICAL-34D399" alt="Trivy clean">
 <img src="https://img.shields.io/badge/Terraform%20%C2%B7%20EKS%20%C2%B7%20Helm%20%C2%B7%20ArgoCD-F21D3D" alt="Terraform, EKS, Helm, ArgoCD">
 </p>
@@ -116,11 +116,11 @@ docker compose exec backend pytest -v                 # backend: unit, API, data
 docker compose exec backend sh -c "ruff check . && ruff format --check . && mypy ."
 
 cd frontend && nvm use && npm ci                      # Node 24 (see .nvmrc)
-npm run lint && npm run typecheck && npm test         # ESLint, tsc, Vitest (371 tests)
+npm run lint && npm run typecheck && npm test         # ESLint, tsc, Vitest (425 tests)
 npm run e2e                                           # Playwright + axe accessibility (see below)
 ```
 
-* **656 backend tests pass** ([`pytest -v` output](docs/evidence/pytest-v.txt)).
+* **674 backend tests pass** (656 in the captured [`pytest -v` run](docs/evidence/pytest-v.txt); the rest cover later features).
 * Backend tests use a **throwaway PostgreSQL database** created per test run (never the real
   one) and a **fake YouTube adapter** with recorded fixtures, so CI never calls the YouTube API.
   The Alembic migration test upgrades from an empty database. Config: `backend/pytest.ini`,
@@ -195,8 +195,8 @@ to open it full size. The map from each rubric item to its files is in
 
 | Check | Result |
 |---|---|
-| Backend tests | **656 passed**, [`pytest -v`](docs/evidence/pytest-v.txt) |
-| Frontend tests | **371 passed** (Vitest); Playwright + axe: 12 passed against the cluster |
+| Backend tests | **674 passed** (656 in the captured run), [`pytest -v`](docs/evidence/pytest-v.txt) |
+| Frontend tests | **425 passed** (Vitest); Playwright + axe: 12 passed against the cluster |
 | `docker compose up --build` | db, migrate, backend, frontend up, [output](docs/evidence/docker-compose.txt) |
 | Images in GHCR | commit-SHA tags only, [list](docs/evidence/ghcr-tags.txt) |
 | Trivy | both images clean at HIGH and CRITICAL, [summary](docs/evidence/trivy.txt) |
@@ -221,7 +221,7 @@ to open it full size. The map from each rubric item to its files is in
 
 <table>
 <tr>
-<td valign="top" width="50%"><a href="docs/screenshots/terminal-pytest.png"><img src="docs/screenshots/terminal-pytest.png" alt="pytest -v: 656 passed" width="100%"></a><br><sub><b>pytest -v: 656 passed</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/terminal-pytest.png"><img src="docs/screenshots/terminal-pytest.png" alt="pytest -v: 656 passed (captured run)" width="100%"></a><br><sub><b>pytest -v: 656 passed (captured run)</b></sub></td>
 <td valign="top" width="50%"><a href="docs/screenshots/terminal-compose-up.png"><img src="docs/screenshots/terminal-compose-up.png" alt="docker compose up --build" width="100%"></a><br><sub><b>docker compose up --build</b></sub></td>
 </tr>
 </table>
