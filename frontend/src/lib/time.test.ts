@@ -5,6 +5,7 @@ import {
   formatDue,
   formatWeekday,
   formatDuration,
+  formatMinutes,
   formatRelative,
   greetingFor,
 } from './time'
@@ -92,5 +93,19 @@ describe('formatDate and formatWeekday', () => {
     expect(formatDate('2026-01-01')).toBe('Jan 1, 2026')
     expect(formatWeekday('2026-10-15')).toBe('Thu')
     expect(formatWeekday('2026-10-18')).toBe('Sun')
+  })
+})
+
+describe('formatMinutes', () => {
+  it('writes whole minutes, with hours from 60', () => {
+    expect(formatMinutes(0)).toBe('0 min')
+    expect(formatMinutes(58)).toBe('58 min')
+    expect(formatMinutes(60)).toBe('1 h')
+    expect(formatMinutes(65)).toBe('1 h 5 min')
+  })
+
+  it('never goes negative and rounds to the nearest minute', () => {
+    expect(formatMinutes(-3)).toBe('0 min')
+    expect(formatMinutes(57.6)).toBe('58 min')
   })
 })

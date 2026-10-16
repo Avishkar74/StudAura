@@ -45,6 +45,14 @@ export function formatDuration(totalSeconds: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`
 }
 
+/** 57 -> "57 min", 65 -> "1 h 5 min". Whole minutes in, so callers choose how to round. */
+export function formatMinutes(minutes: number): string {
+  const m = Math.max(0, Math.round(minutes))
+  const h = Math.floor(m / 60)
+  if (h === 0) return `${m} min`
+  return m % 60 === 0 ? `${h} h` : `${h} h ${m % 60} min`
+}
+
 const DAY_MS = 24 * 3600 * 1000
 
 function dayNumber(iso: string): number {

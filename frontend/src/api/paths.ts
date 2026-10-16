@@ -26,6 +26,27 @@ export function createPath(input: CreatePathInput) {
   })
 }
 
+export interface UpdatePathInput {
+  title?: string
+  /** null clears it */
+  description?: string | null
+  /** YYYY-MM-DD, or null to clear */
+  target_date?: string | null
+}
+
+export function updatePath(pathId: string, input: UpdatePathInput) {
+  return apiFetch<LearningPath>(`${BASE}/${pathId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+/** Removes the path and its video list. Notes, progress and saved videos are kept. */
+export function deletePath(pathId: string) {
+  return apiFetch<void>(`${BASE}/${pathId}`, { method: 'DELETE' })
+}
+
 export function getPath(pathId: string) {
   return apiFetch<LearningPath>(`${BASE}/${pathId}`)
 }

@@ -131,4 +131,87 @@ describe('comments panel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/Couldn't load your comments/)
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
+
+  it('reads the video time when the comment is sent, not when the box was ticked', async () => {
+    const user = userEvent.setup()
+    let now = 45.4
+    const api = mockApi({
+      [`GET ${URL}`]: { body: [] },
+      [`POST ${URL}`]: (init) => ({
+        status: 201,
+        body: comment('c1', 'Late', JSON.parse(String(init?.body)).timestamp_seconds),
+      }),
+    })
+    renderPanel({ getCurrentTime: () => now })
+    await screen.findByText(/No comments yet/)
+    await user.type(screen.getByRole('textbox', { name: 'Add a comment' }), 'Late')
+    await user.click(screen.getByRole('checkbox', { name: /Attach the current video time/ }))
+    expect(screen.getByText('At 0:45')).toBeInTheDocument()
+
+    now = 53.9 // the video kept playing while the student typed
+    await user.click(screen.getByRole('button', { name: 'Add comment' }))
+
+    await waitFor(() => expect(api.calls.some((c) => c.method === 'POST')).toBe(true))
+    expect(api.calls.find((c) => c.method === 'POST')?.body).toEqual({
+      body: 'Late',
+      timestamp_seconds: 53,
+    })
+  })
+
+  it('keeps the attached time label in step with the player', async () => {
+    const user = userEvent.setup()
+    let now = 10
+    mockApi({ [`GET ${URL}`]: { body: [] } })
+    renderPanel({ getCurrentTime: () => now })
+    await screen.findByText(/No comments yet/)
+    await user.click(screen.getByRole('checkbox', { name: /Attach the current video time/ }))
+    expect(screen.getByText('At 0:10')).toBeInTheDocument()
+    now = 31
+    expect(await screen.findByText('At 0:31', {}, { timeout: 3000 })).toBeInTheDocument()
+  })
+
+  it('shows a new comment at once, before the server has answered', async () => {
+    const user = userEvent.setup()
+    let release: () => void = () => undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let stored: VideoComment[] = []
+    mockApi({
+      [`GET ${URL}`]: () => ({ body: stored }),
+      [`POST ${URL}`]: () => {
+        stored = [comment('c7', 'Instant')]
+        return { status: 201, body: stored[0], gate }
+      },
+    })
+    renderPanel()
+    await screen.findByText(/No comments yet/)
+    await user.type(screen.getByRole('textbox', { name: 'Add a comment' }), 'Instant')
+    await user.click(screen.getByRole('button', { name: 'Add comment' }))
+
+    const item = (await screen.findByText('Instant')).closest('li') as HTMLElement
+    expect(within(item).getByText('Saving…')).toBeInTheDocument()
+    expect(within(item).getByRole('button', { name: 'Delete comment' })).toBeDisabled()
+    expect(screen.getByRole('textbox', { name: 'Add a comment' })).toHaveValue('')
+
+    release()
+    await waitFor(() => expect(within(item).queryByText('Saving…')).not.toBeInTheDocument())
+    expect(screen.getByText('Instant')).toBeInTheDocument()
+  })
+
+  it('takes a comment back and returns its text when the server refuses it', async () => {
+    const user = userEvent.setup()
+    mockApi({
+      [`GET ${URL}`]: { body: [] },
+      [`POST ${URL}`]: { status: 500, body: {} },
+    })
+    renderPanel()
+    await screen.findByText(/No comments yet/)
+    await user.type(screen.getByRole('textbox', { name: 'Add a comment' }), 'Try again later')
+    await user.click(screen.getByRole('button', { name: 'Add comment' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Couldn't save your comment/)
+    expect(screen.getByRole('textbox', { name: 'Add a comment' })).toHaveValue('Try again later')
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+  })
 })

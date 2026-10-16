@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, CircleCheck, ExternalLink, TriangleAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { LearningStatus, PathVideo, VideoDetail } from '@/api/types'
 import { putProgress } from '@/api/videos'
@@ -17,6 +17,7 @@ import { goalKeys } from '@/features/goals/queries'
 import { SaveToggle } from '@/features/library/SaveToggle'
 import { revisionKeys } from '@/features/revisions/queries'
 import { RevisionControls } from '@/features/revisions/RevisionControls'
+import { useLivePosition } from './useLivePosition'
 import { usePlaybackTracker } from './usePlaybackTracker'
 import { useViewingTime } from './useViewingTime'
 import { WorkspacePanel } from './WorkspacePanel'
@@ -28,6 +29,8 @@ export interface WorkspaceProps {
   back: { to: string; label: string }
   previous?: { to: string; title: string }
   next?: { to: string; title: string }
+  /** The learning path the video was opened from; absent for a saved video. */
+  pathId?: string
 }
 
 type Failure = 'unplayable' | 'player-unavailable' | null
@@ -74,7 +77,7 @@ function Fallback({
 }
 
 /** The video workspace: player, resume prompt and playback progress. */
-export function Workspace({ item, back, previous, next }: WorkspaceProps) {
+export function Workspace({ item, back, previous, next, pathId }: WorkspaceProps) {
   const { video } = item
   useDocumentTitle(video.title)
 
@@ -87,6 +90,8 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
     video.availability_state === 'embed_disabled' ? 'unplayable' : null,
   )
   const [player, setPlayer] = useState<YTPlayer | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [stateChanges, setStateChanges] = useState(0)
   // Playback can change the status (a clean ending completes the video), so follow the server.
   const [status, setStatus] = useState<LearningStatus>(item.learning_status)
 
@@ -102,6 +107,10 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
     () => void qc.invalidateQueries({ queryKey: goalKeys.all }),
   )
 
+  // The Progress tab and the path card show where the student is, so they follow playback.
+  const livePosition = useLivePosition(player, playing, item.last_position_seconds, stateChanges)
+  const shownPosition = player ? livePosition : savedPosition
+
   const setLearningStatus = useMutation({
     mutationFn: (learning_status: LearningStatus) => putProgress(video.id, { learning_status }),
     onSuccess: (saved) => {
@@ -110,6 +119,17 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
       void qc.invalidateQueries({ queryKey: revisionKeys.all })
     },
   })
+
+  // A new status (completed, needs revision) changes the path's totals; refresh them at once so
+  // the Progress tab agrees with what the student just did.
+  const firstStatus = useRef(true)
+  useEffect(() => {
+    if (firstStatus.current) {
+      firstStatus.current = false
+      return
+    }
+    void qc.invalidateQueries({ queryKey: pathKeys.all })
+  }, [status, qc])
 
   // Path pages and the dashboard read progress and today's goal from the cache; refresh them on
   // the way out.
@@ -123,7 +143,7 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
 
   const pct =
     video.duration_seconds && video.duration_seconds > 0
-      ? Math.min(100, (savedPosition / video.duration_seconds) * 100)
+      ? Math.min(100, (shownPosition / video.duration_seconds) * 100)
       : null
 
   function resume() {
@@ -163,6 +183,8 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
               tracker.onReady(p)
             }}
             onStateChange={(state, p) => {
+              setPlaying(state === PlayerState.PLAYING)
+              setStateChanges((n) => n + 1)
               if (state === PlayerState.PLAYING) setOfferResume(false)
               tracker.onStateChange(state, p)
               viewing.onStateChange(state)
@@ -213,14 +235,14 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
             <div>
               <ProgressBar value={pct} label="Playback progress" />
               <p className="mt-1.5 text-sm text-text-secondary">
-                {Math.round(pct)}% · {formatTimestamp(savedPosition)} of{' '}
+                {Math.round(pct)}% · {formatTimestamp(shownPosition)} of{' '}
                 {formatTimestamp(video.duration_seconds ?? 0)}
               </p>
             </div>
           ) : (
             <p className="text-sm text-text-secondary">
-              {savedPosition > 0
-                ? `Saved position ${formatTimestamp(savedPosition)}`
+              {shownPosition > 0
+                ? `Saved position ${formatTimestamp(shownPosition)}`
                 : 'Not started yet'}
             </p>
           )}
@@ -296,6 +318,17 @@ export function Workspace({ item, back, previous, next }: WorkspaceProps) {
           }
         }}
         onSeek={player ? (seconds) => player.seekTo(seconds, true) : undefined}
+        progress={{
+          durationSeconds: video.duration_seconds,
+          position: shownPosition,
+          savedPosition,
+          playing,
+          status,
+          lastWatchedAt: item.last_watched_at ?? null,
+          pathId,
+          pathPosition: 'position' in item ? item.position : undefined,
+          next,
+        }}
       />
     </div>
   )

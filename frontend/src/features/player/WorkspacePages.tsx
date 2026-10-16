@@ -84,6 +84,7 @@ export function PathWorkspacePage() {
   return (
     <Workspace
       key={videoId}
+      pathId={pathId}
       item={items[index]}
       back={{
         to: `/learning-paths/${pathId}`,
