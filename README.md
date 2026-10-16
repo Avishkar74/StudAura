@@ -62,6 +62,12 @@ GitHub Actions runs lint, type checks and tests on every pull request, builds an
 both images, and on `main` scans them with Trivy and publishes them to GHCR. See
 [`docs/CICD.md`](docs/CICD.md) for the pipeline, the Trivy policy and the one-time repository setup.
 
+## Infrastructure
+
+`deploy/terraform` builds the AWS network and EKS cluster (VPC, subnets, NAT, managed nodes, GitHub OIDC
+deploy role). See [`deploy/terraform/README.md`](deploy/terraform/README.md) for the steps, the cost and
+how to tear it down.
+
 ## Environment variables
 
 See [`.env.example`](.env.example). Secrets (`SUPABASE_JWT_SECRET`, `DATABASE_URL`,

@@ -1,0 +1,18 @@
+# Copy to terraform.tfvars (git-ignored) and adjust. Everything here has a sensible default, so
+# the file is optional.
+
+region      = "ap-south-1"
+environment = "demo"
+
+# Restrict the Kubernetes API to your own address when you can (find it at https://checkip.amazonaws.com):
+# endpoint_public_access_cidrs = ["203.0.113.7/32"]
+
+# People besides you who should be cluster admins:
+# cluster_admin_principal_arns = ["arn:aws:iam::123456789012:user/aryan"]
+
+# About 70% cheaper, but the nodes can be reclaimed at any time (fine for a demo):
+# node_capacity_type = "SPOT"
+# node_instance_types = ["t3.medium", "t3a.medium"]
+
+# Already have a GitHub OIDC provider in this AWS account? Only one is allowed:
+# create_github_oidc_provider = false

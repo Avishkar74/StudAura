@@ -17,6 +17,7 @@ push to main ──► backend ─┐
 |---|---|---|
 | `backend` | PR, main | `ruff check`, `ruff format --check`, `mypy .`, `pytest` against a real PostgreSQL 16 service. That includes the Alembic migration test (upgrade from an empty database). The job **fails if any test is skipped**, because a skip would mean the database was not reached. |
 | `frontend` | PR, main | Node from `frontend/.nvmrc`, then `npm ci`, `eslint`, `prettier --check`, `tsc`, `vitest`, `vite build`. |
+| `terraform` | PR, main | `terraform fmt -check`, `init -backend=false -lockfile=readonly` and `validate` for the infrastructure and the state-bucket bootstrap, `terraform test` (plan tests with the AWS provider mocked, so no credentials), and a Trivy misconfiguration scan that fails on HIGH or CRITICAL. No AWS account is involved. |
 | `images` (backend, frontend) | PR, main | Builds the production image (backend `runtime` stage, frontend `prod` stage), checks it runs as a non-root user, starts it and smoke-tests it: backend `GET /health`, `/metrics`, and `/ready` answering 503 with no database; frontend `/healthz`, `/`, a deep link falling back to the SPA, and the security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) on the page. |
 | `publish` (backend, frontend) | main only, after the three above | Builds, scans with Trivy, then pushes `ghcr.io/<owner>/studaura-backend` and `studaura-frontend`, tagged with the commit SHA and `latest`. |
 
@@ -81,6 +82,11 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:lates
   image --severity CRITICAL --ignore-unfixed studaura-frontend:local
 ```
 
+Terraform is scanned by the same tool (`trivy config`) with the same bar: HIGH and CRITICAL
+misconfigurations fail the job. A risk that is accepted on purpose is annotated in the code with
+`#trivy:ignore:<id>` and a comment saying why (the public Kubernetes API endpoint in
+`deploy/terraform/eks.tf` is the one example).
+
 If a CRITICAL has no practical fix, add an entry with a reason and an expiry date to a
 `.trivyignore` file and pass it to the Trivy steps with `trivyignores:`. Do not widen the policy
 to get a build through.
@@ -99,8 +105,8 @@ to get a build through.
    the repository if they are not already, and set the visibility you want. The EKS cluster needs
    either public packages or an image pull secret.
 4. **Settings → Branches → protect `main`**: require a pull request and require the status checks
-   `Backend (ruff, mypy, pytest)`, `Frontend (eslint, tsc, vitest, build)` and the two `Image`
-   checks. The checks appear in the list only after they have run once.
+   `Backend (ruff, mypy, pytest)`, `Frontend (eslint, tsc, vitest, build)`, `Terraform (fmt,
+   validate, test, Trivy)` and the two `Image` checks. The checks appear in the list only after they have run once.
 
 No secrets are needed: pushing to GHCR uses the workflow's own `GITHUB_TOKEN`. Deploying to AWS
 (M16 and later) will use GitHub OIDC, not stored keys.
@@ -126,5 +132,5 @@ docker run --rm -p 8080:8080 studaura-frontend:local                   # then GE
 ## Not here yet
 
 - E2E tests with Playwright on main (TRD 17): added with the accessibility and E2E pass (M19).
-- `terraform fmt` / `terraform validate` (M16) and the Helm deploy and post-deploy smoke test
-  (M17) will extend this workflow.
+- The Helm deploy and the post-deploy smoke test (M17) will extend this workflow. They will assume
+  the role from `deploy/terraform` through GitHub OIDC, with no stored AWS keys.
