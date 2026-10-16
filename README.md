@@ -7,9 +7,9 @@ A dark-only, YouTube-inspired personal learning workspace, delivered through a c
 
 <p align="center">
 <a href="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml"><img src="https://github.com/Avishkar74/StudAura/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-<a href="https://stud-aura.vercel.app/"><img src="https://img.shields.io/badge/live%20demo-stud--aura.vercel.app-F21D3D" alt="Live demo"></a>
-<img src="https://img.shields.io/badge/backend%20tests-656%20passed-34D399" alt="656 backend tests">
-<img src="https://img.shields.io/badge/frontend%20tests-371%20passed-34D399" alt="371 frontend tests">
+<a href="https://stud-aura.vercel.app/"><img src="https://img.shields.io/badge/live%20app-stud--aura.vercel.app-F21D3D" alt="Live app"></a>
+<img src="https://img.shields.io/badge/backend%20tests-674%20passed-34D399" alt="674 backend tests">
+<img src="https://img.shields.io/badge/frontend%20tests-425%20passed-34D399" alt="425 frontend tests">
 <img src="https://img.shields.io/badge/Trivy-0%20fixable%20HIGH%2FCRITICAL-34D399" alt="Trivy clean">
 <img src="https://img.shields.io/badge/Terraform%20%C2%B7%20EKS%20%C2%B7%20Helm%20%C2%B7%20ArgoCD-F21D3D" alt="Terraform, EKS, Helm, ArgoCD">
 </p>
@@ -23,14 +23,17 @@ A dark-only, YouTube-inspired personal learning workspace, delivered through a c
 <a href="#infrastructure-and-kubernetes">Infrastructure</a> ·
 <a href="#verification-and-evidence">Evidence</a> ·
 <a href="#known-issues-and-limitations">Limitations</a> ·
-<a href="docs/SUBMISSION.md">Submission guide</a>
+<a href="StudAura-presentation.pptx">Slides</a> ·
+<a href="SUBMISSION.md">Submission guide</a>
 </p>
 
 Organise YouTube videos and playlists into learning paths, watch them embedded, take notes, track
 progress, set daily goals and manage a revision queue. It is also a DevOps capstone: Docker, GitHub
 Actions, Trivy, GHCR, Terraform, EKS, Helm, ArgoCD, Prometheus and Grafana are all part of the
 project. Specs: [`docs/PRD.md`](docs/PRD.md), [`docs/TRD.md`](docs/TRD.md). UI mockups:
-[`docs/ui-reference`](docs/ui-reference). Slides: [`demo/`](demo).
+[`docs/ui-reference`](docs/ui-reference).
+
+**Start here:** the [slide deck (PPTX)](StudAura-presentation.pptx) and the [submission guide](SUBMISSION.md), which maps every graded item to its files and screenshots.
 
 <p align="center">
 <a href="docs/screenshots/landing-desktop.png"><img src="docs/screenshots/landing-hero.png" alt="StudAura landing page" width="860"></a>
@@ -113,11 +116,11 @@ docker compose exec backend pytest -v                 # backend: unit, API, data
 docker compose exec backend sh -c "ruff check . && ruff format --check . && mypy ."
 
 cd frontend && nvm use && npm ci                      # Node 24 (see .nvmrc)
-npm run lint && npm run typecheck && npm test         # ESLint, tsc, Vitest (371 tests)
+npm run lint && npm run typecheck && npm test         # ESLint, tsc, Vitest (425 tests)
 npm run e2e                                           # Playwright + axe accessibility (see below)
 ```
 
-* **656 backend tests pass** ([`pytest -v` output](docs/evidence/pytest-v.txt)).
+* **674 backend tests pass** (656 in the captured [`pytest -v` run](docs/evidence/pytest-v.txt); the rest cover later features).
 * Backend tests use a **throwaway PostgreSQL database** created per test run (never the real
   one) and a **fake YouTube adapter** with recorded fixtures, so CI never calls the YouTube API.
   The Alembic migration test upgrades from an empty database. Config: `backend/pytest.ini`,
@@ -188,12 +191,12 @@ the ingress controller first (its load balancer blocks deleting the VPC), then r
 Everything below was produced from this repository on a cluster built by `terraform apply`
 (Sydney, `ap-southeast-2`) and has since been torn down with `terraform destroy`. Click an image
 to open it full size. The map from each rubric item to its files is in
-[`docs/SUBMISSION.md`](docs/SUBMISSION.md); raw command output is in [`docs/evidence`](docs/evidence).
+[`SUBMISSION.md`](SUBMISSION.md); raw command output is in [`docs/evidence`](docs/evidence).
 
 | Check | Result |
 |---|---|
-| Backend tests | **656 passed**, [`pytest -v`](docs/evidence/pytest-v.txt) |
-| Frontend tests | **371 passed** (Vitest); Playwright + axe: 12 passed against the cluster |
+| Backend tests | **674 passed** (656 in the captured run), [`pytest -v`](docs/evidence/pytest-v.txt) |
+| Frontend tests | **425 passed** (Vitest); Playwright + axe: 12 passed against the cluster |
 | `docker compose up --build` | db, migrate, backend, frontend up, [output](docs/evidence/docker-compose.txt) |
 | Images in GHCR | commit-SHA tags only, [list](docs/evidence/ghcr-tags.txt) |
 | Trivy | both images clean at HIGH and CRITICAL, [summary](docs/evidence/trivy.txt) |
@@ -218,7 +221,7 @@ to open it full size. The map from each rubric item to its files is in
 
 <table>
 <tr>
-<td valign="top" width="50%"><a href="docs/screenshots/terminal-pytest.png"><img src="docs/screenshots/terminal-pytest.png" alt="pytest -v: 656 passed" width="100%"></a><br><sub><b>pytest -v: 656 passed</b></sub></td>
+<td valign="top" width="50%"><a href="docs/screenshots/terminal-pytest.png"><img src="docs/screenshots/terminal-pytest.png" alt="pytest -v: 656 passed (captured run)" width="100%"></a><br><sub><b>pytest -v: 656 passed (captured run)</b></sub></td>
 <td valign="top" width="50%"><a href="docs/screenshots/terminal-compose-up.png"><img src="docs/screenshots/terminal-compose-up.png" alt="docker compose up --build" width="100%"></a><br><sub><b>docker compose up --build</b></sub></td>
 </tr>
 </table>
@@ -327,16 +330,11 @@ by route and business events.
 * **No automatic rollback of data.** Rollbacks restore the previous image; Alembic migrations are
   forward-only.
 * **Supabase free tier** limits sign-up e-mails; confirmation can be turned off for a demo.
-* **No live deployment.** To keep AWS costs down the cluster was destroyed after the evidence and the
-  video were captured; the Terraform and Helm steps above recreate it in about 30 minutes.
+* **No live deployment.** To keep AWS costs down the cluster was destroyed after the evidence was
+  captured; the Terraform and Helm steps above recreate it in about 30 minutes.
 * The signed-in E2E specs need a test account and are skipped in CI.
 
 ## Environment variables
 
 See [`.env.example`](.env.example). Secrets (`SUPABASE_JWT_SECRET`, `DATABASE_URL`,
 `YOUTUBE_DATA_API_KEY`) are backend-only and must never reach the frontend bundle or Git.
-
-## Demo
-
-A step-by-step script for the live demo (commit, pipeline, rollout, dashboards) is in
-[`docs/DEMO.md`](docs/DEMO.md).
