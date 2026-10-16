@@ -1,3 +1,6 @@
+# Note: the 41 entries below are 35 managed resources (aws_*) plus 6 data sources (data.*).
+# terraform apply created the 35 resources and terraform destroy removed all 35.
+
 $ terraform state list | wc -l
 41
 
