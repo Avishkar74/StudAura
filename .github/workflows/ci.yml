@@ -154,8 +154,11 @@ jobs:
         run: |
           curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" -o helm.tgz
           echo "${HELM_SHA256}  helm.tgz" | sha256sum -c -
-          tar -xzf helm.tgz --strip-components=1 linux-amd64/helm
-          sudo install helm /usr/local/bin/helm
+          # Extract elsewhere: the checkout has a helm/ directory that the binary would collide with.
+          mkdir "$RUNNER_TEMP/helm-bin"
+          tar -xzf helm.tgz -C "$RUNNER_TEMP/helm-bin" --strip-components=1 linux-amd64/helm
+          sudo install "$RUNNER_TEMP/helm-bin/helm" /usr/local/bin/helm
+          rm helm.tgz
       - name: Lint
         run: helm lint helm/studaura --strict --set image.tag=${{ github.sha }}
       - name: The chart refuses to render without an image tag
