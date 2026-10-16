@@ -1,6 +1,7 @@
 # Runtime dependencies. pyproject.toml is the source of truth (the Docker image installs from it);
 # this file mirrors it for tools that expect requirements.txt. Test tooling: requirements-dev.txt.
-fastapi>=0.128,<0.136
+fastapi>=0.136,<1
+starlette>=1.3.1
 uvicorn[standard]>=0.32,<1
 sqlalchemy[asyncio]>=2.0.36,<3
 asyncpg>=0.30,<1
@@ -11,4 +12,4 @@ httpx>=0.27,<1
 nh3>=0.2.18,<1
 prometheus-client>=0.21,<1
 tzdata>=2024.1
-prometheus-fastapi-instrumentator>=7.0,<8
+prometheus-fastapi-instrumentator>=8.1,<9

@@ -8,8 +8,10 @@ version = "0.1.0"
 description = "StudAura FastAPI backend"
 requires-python = ">=3.12"
 dependencies = [
-    # prometheus-fastapi-instrumentator 7.1 breaks on FastAPI >= 0.143 (_IncludedRouter); keep capped.
-    "fastapi>=0.128,<0.136",
+    # Starlette 1.3.1 fixes CVE-2026-48818 and CVE-2026-54283 (HIGH). The old instrumentator 7.x
+    # pinned Starlette below 1.0; 8.x supports it, so the FastAPI cap is gone.
+    "fastapi>=0.136,<1",
+    "starlette>=1.3.1",
     "uvicorn[standard]>=0.32,<1",
     "sqlalchemy[asyncio]>=2.0.36,<3",
     "asyncpg>=0.30,<1",
@@ -20,7 +22,7 @@ dependencies = [
     "nh3>=0.2.18,<1",
     "prometheus-client>=0.21,<1",
     "tzdata>=2024.1",
-    "prometheus-fastapi-instrumentator>=7.0,<8",
+    "prometheus-fastapi-instrumentator>=8.1,<9",
 ]
 
 [project.optional-dependencies]
