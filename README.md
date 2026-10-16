@@ -36,7 +36,7 @@ project.
 **Start here:** the [presentation video](StudAura-presentation-video.mp4) (11 minutes), the [slide deck (PDF)](StudAura-Capstone-App-and-DevOps-presentation.pdf) and the [submission guide](SUBMISSION.md), which maps every graded item to its files and screenshots.
 
 <p align="center">
-<a href="docs/screenshots/landing-desktop.png"><img src="docs/screenshots/landing-hero.png" alt="StudAura landing page" width="860"></a>
+[text](https://github.com/user-attachments/assets/d0814d22-392f-4f3c-900a-99d82651c746)
 </p>
 
 ## What the app does
