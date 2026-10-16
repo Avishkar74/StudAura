@@ -18,7 +18,18 @@ async def ensure_user(
 
     Safe under concurrent first requests (ON CONFLICT DO NOTHING). An existing row keeps its
     display name, but its email follows Supabase if the user changed it there.
+
+    This runs on every authenticated request, so the common case (the user already exists and
+    nothing changed) is a single read with no write and no commit. That matters when the database
+    is far away: every statement is a network round trip.
     """
+    existing = await get_user(db, user_id)
+    if existing is not None:
+        if existing.email != email:
+            existing.email = email
+            await db.commit()
+        return existing
+
     await db.execute(
         insert(User)
         .values(id=user_id, email=email, display_name=display_name)

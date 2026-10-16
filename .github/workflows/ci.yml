@@ -202,7 +202,7 @@ jobs:
           build-args: |
             VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ vars.VITE_SUPABASE_ANON_KEY }}
-            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || '/api' }}
+            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
           cache-from: type=gha,scope=${{ matrix.image }}
       # Policy: CRITICAL vulnerabilities that have a fix block publishing. HIGH and below are
       # reported in the artifacts and reviewed, but do not block (docs/CICD.md).
@@ -258,7 +258,7 @@ jobs:
           build-args: |
             VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ vars.VITE_SUPABASE_ANON_KEY }}
-            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || '/api' }}
+            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
           cache-from: type=gha,scope=${{ matrix.image }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

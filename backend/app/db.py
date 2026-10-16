@@ -38,13 +38,29 @@ async def get_db() -> AsyncIterator[AsyncSession]:
         yield session
 
 
-DB_CHECK_TIMEOUT_SECONDS = 3.0
-
-
 async def check_database() -> bool:
     """Return True if `SELECT 1` succeeds within the readiness timeout."""
     try:
-        async with asyncio.timeout(DB_CHECK_TIMEOUT_SECONDS):
+        async with asyncio.timeout(settings.DB_CHECK_TIMEOUT_SECONDS):
+            async with get_engine().connect() as conn:
+                await conn.execute(text("SELECT 1"))
+    except Exception:
+        return False
+    return True
+
+
+# Generous on purpose: a distant database can need several seconds to open a connection.
+WARM_UP_TIMEOUT_SECONDS = 60.0
+
+
+async def warm_database_pool() -> bool:
+    """Open one connection so the first real request does not pay for connection setup.
+
+    Runs in the background at startup. Unlike the readiness check it is allowed to take as long
+    as the link needs, so a distant database still ends up with a warm pool.
+    """
+    try:
+        async with asyncio.timeout(WARM_UP_TIMEOUT_SECONDS):
             async with get_engine().connect() as conn:
                 await conn.execute(text("SELECT 1"))
     except Exception:

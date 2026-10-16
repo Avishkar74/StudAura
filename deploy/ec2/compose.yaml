@@ -1,0 +1,49 @@
+# StudAura on a single EC2 instance with Docker Compose.
+#
+# The database and authentication are Supabase, so this runs only the application:
+#   web      nginx serving the built frontend and routing /api, /health and /ready to the backend
+#   backend  FastAPI
+#   migrate  one-shot `alembic upgrade head`, run once per deploy and never inside the backend
+#
+# Images are built on the developer machine and loaded onto the instance by deploy.sh (a 1 GB
+# instance cannot build the frontend). TAG is the git commit the images were built from.
+name: studaura
+
+services:
+  migrate:
+    image: studaura-backend:${TAG:?set TAG, e.g. via deploy.sh}
+    command: ["alembic", "upgrade", "head"]
+    env_file: .env
+    restart: "no"
+
+  backend:
+    image: studaura-backend:${TAG:?set TAG, e.g. via deploy.sh}
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 450m
+
+  web:
+    image: studaura-frontend:${TAG:?set TAG, e.g. via deploy.sh}
+    restart: unless-stopped
+    ports:
+      - "80:8080"
+    volumes:
+      # Replaces the image's default config with one that also proxies the API.
+      - ./edge.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 96m
