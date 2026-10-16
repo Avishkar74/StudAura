@@ -1,0 +1,6 @@
+StudAura {{ .Release.Name }} is deployed to namespace {{ .Release.Namespace }}.
+
+  kubectl -n {{ .Release.Namespace }} get pods,svc,ingress
+
+Open the site at the Ingress address:
+  kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'

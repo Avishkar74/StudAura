@@ -1,0 +1,60 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate
+  labels:
+    {{- include "studaura.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    # Runs once per install/upgrade, before the new pods start. A failed migration fails the
+    # release instead of leaving replicas running against a half-migrated schema.
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "studaura.selector" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      # Hooks run before the release's ServiceAccount and ConfigMap exist on a first install, so
+      # this Job uses the namespace default account and only the Secret (created out of band).
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: {{ include "studaura.image" (list . "backend") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["alembic", "upgrade", "head"]
+          env:
+            - name: APP_ENV
+              value: {{ .Values.backend.config.APP_ENV | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secrets.existingSecret }}
+          resources:
+            {{- toYaml .Values.migrations.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

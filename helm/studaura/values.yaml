@@ -1,0 +1,68 @@
+# Image tags are always a commit SHA, set by the deploy (`--set image.tag=<sha>`); there is no
+# default so a deploy can never silently fall back to a moving tag such as "latest".
+image:
+  registry: ghcr.io
+  # Lower-case GitHub owner. Images are <registry>/<owner>/studaura-backend and -frontend.
+  owner: avishkar74
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+backend:
+  replicas: 2
+  port: 8000
+  resources:
+    requests: { cpu: 100m, memory: 192Mi }
+    limits: { cpu: 500m, memory: 384Mi }
+  # Non-secret settings, rendered into a ConfigMap.
+  config:
+    APP_ENV: production
+    LOG_LEVEL: INFO
+    # Origin(s) the browser loads the site from; set to the Ingress address, e.g. http://<elb-host>.
+    CORS_ORIGINS: ""
+    DB_CHECK_TIMEOUT_SECONDS: "5"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+frontend:
+  replicas: 2
+  port: 8080
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { cpu: 200m, memory: 96Mi }
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+# Secrets are never stored in this chart or in Git. Create the Secret out of band, with keys
+# DATABASE_URL, SUPABASE_URL, YOUTUBE_DATA_API_KEY (and SUPABASE_JWT_SECRET for legacy projects):
+#   kubectl -n studaura create secret generic studaura-secrets --from-literal=...
+secrets:
+  existingSecret: studaura-secrets
+
+# Alembic runs once per release as a hook Job, not in every replica.
+migrations:
+  enabled: true
+  backoffLimit: 2
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: 300m, memory: 256Mi }
+
+ingress:
+  enabled: true
+  className: nginx
+  # Empty host matches any host name (for example the load balancer DNS name).
+  host: ""
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 1m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

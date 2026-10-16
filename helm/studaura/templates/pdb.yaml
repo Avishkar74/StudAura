@@ -1,0 +1,17 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- range $component := list "backend" "frontend" }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $.Release.Name }}-{{ $component }}
+  labels:
+    {{- include "studaura.labels" $ | nindent 4 }}
+spec:
+  minAvailable: {{ $.Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "studaura.selector" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $component }}
+{{- end }}
+{{- end }}
