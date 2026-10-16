@@ -122,6 +122,9 @@ describe('Import playlist dialog', () => {
   it('follows next_page_token through every page and shows live progress', async () => {
     const tokens: (string | undefined)[] = []
     let calls = 0
+    // Hold the second page until the progress has been observed.
+    let releaseSecondPage!: () => void
+    const secondPage = new Promise<void>((resolve) => (releaseSecondPage = resolve))
     mockApi({
       ...ME,
       ...PATH_LIST,
@@ -133,7 +136,7 @@ describe('Import playlist dialog', () => {
             body: page({ items: many('a', 50), total_in_playlist: 70, next_page_token: 'tok50' }),
           }
         }
-        return { delay: 150, body: page({ items: many('b', 20), total_in_playlist: 70 }) }
+        return { gate: secondPage, body: page({ items: many('b', 20), total_in_playlist: 70 }) }
       },
     })
     renderApp()
@@ -146,6 +149,7 @@ describe('Import playlist dialog', () => {
       'aria-valuenow',
       '71',
     )
+    releaseSecondPage()
     expect(await dialog.findByText('Imported 70 videos.')).toBeInTheDocument()
     expect(tokens).toEqual([undefined, 'tok50'])
   })
@@ -225,6 +229,9 @@ describe('Import playlist dialog', () => {
   it('can be stopped between pages and continued', async () => {
     const tokens: (string | undefined)[] = []
     let calls = 0
+    // Hold the first page until Stop has been pressed, so the click can never lose a race.
+    let releaseFirstPage!: () => void
+    const firstPage = new Promise<void>((resolve) => (releaseFirstPage = resolve))
     mockApi({
       ...ME,
       ...PATH_LIST,
@@ -233,7 +240,7 @@ describe('Import playlist dialog', () => {
         calls += 1
         if (calls === 1)
           return {
-            delay: 100,
+            gate: firstPage,
             body: page({ items: many('a', 50), total_in_playlist: 80, next_page_token: 'tok50' }),
           }
         return { body: page({ items: many('b', 30), total_in_playlist: 80 }) }
@@ -243,6 +250,7 @@ describe('Import playlist dialog', () => {
     const { user, dialog } = await openDialog()
     await submit(user, dialog)
     await user.click(await dialog.findByRole('button', { name: 'Stop' }))
+    releaseFirstPage()
 
     expect(await dialog.findByText(/Stopped\. You can continue/)).toBeInTheDocument()
     expect(dialog.getByText('Imported 50 videos so far.')).toBeInTheDocument()

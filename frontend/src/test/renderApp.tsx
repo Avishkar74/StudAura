@@ -33,6 +33,8 @@ export interface ApiReply {
   fail?: boolean
   /** Hold the response for this many milliseconds (to observe loading states). */
   delay?: number
+  /** Hold the response until this promise settles (deterministic alternative to `delay`). */
+  gate?: Promise<void>
 }
 
 type Handler = ApiReply | ((init: RequestInit | undefined, url: string) => ApiReply)
@@ -97,6 +99,7 @@ export function mockApi(routes: Record<string, Handler>) {
     const handler = key ? routes[key] : undefined
     const reply = typeof handler === 'function' ? handler(init, url) : handler
     if (!reply) return { ok: false, status: 404, statusText: 'Not found', json: async () => ({}) }
+    if (reply.gate) await reply.gate
     if (reply.delay) await new Promise((resolve) => setTimeout(resolve, reply.delay))
     if (reply.fail) throw new TypeError('network down')
     const status = reply.status ?? 200
