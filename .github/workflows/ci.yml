@@ -139,6 +139,44 @@ jobs:
           exit-code: "1"
           hide-progress: true
 
+  helm:
+    name: Helm (lint, template, Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HELM_VERSION: v4.3.1
+      HELM_SHA256: 0403a88ae20913d11b10a2467b50087721fea7581736da6b9d3992f5357fe54b
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Helm
+        run: |
+          curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" -o helm.tgz
+          echo "${HELM_SHA256}  helm.tgz" | sha256sum -c -
+          tar -xzf helm.tgz --strip-components=1 linux-amd64/helm
+          sudo install helm /usr/local/bin/helm
+      - name: Lint
+        run: helm lint helm/studaura --strict --set image.tag=${{ github.sha }}
+      - name: The chart refuses to render without an image tag
+        run: |
+          if helm template studaura helm/studaura >/dev/null 2>&1; then
+            echo "::error::The chart rendered without image.tag"
+            exit 1
+          fi
+      - name: Render
+        run: |
+          mkdir -p "$RUNNER_TEMP/rendered"
+          helm template studaura helm/studaura -n studaura --set image.tag=${{ github.sha }} > "$RUNNER_TEMP/rendered/studaura.yaml"
+      - name: Trivy misconfiguration scan of the rendered manifests
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: ${{ runner.temp }}/rendered
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          hide-progress: true
+
   images:
     name: "Image (${{ matrix.image }}): build and smoke test"
     runs-on: ubuntu-latest
