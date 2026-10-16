@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # raise it when the API and database are far apart (a new connection can take seconds).
     DB_CHECK_TIMEOUT_SECONDS: float = Field(default=3.0, gt=0, le=60)
 
+    # How long a user's profile row is reused before it is read again (0 turns the cache off).
+    USER_CACHE_SECONDS: float = Field(default=60.0, ge=0, le=3600)
+
     @field_validator("DATABASE_URL")
     @classmethod
     def _use_asyncpg_driver(cls, value: str) -> str:

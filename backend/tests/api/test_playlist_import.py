@@ -510,3 +510,32 @@ async def test_import_results_are_counted_without_identifying_labels(
     assert 'app_import_attempts_total{result="partial"}' in metrics
     assert MIXED_PLAYLIST_ID not in metrics
     assert NORMAL_VIDEO_ID not in metrics
+
+
+async def test_a_page_is_added_with_one_insert_not_one_per_video(
+    auth_client: httpx.AsyncClient,
+    alice: Actor,
+    fake_youtube: FakeYouTubeClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A distant database makes every round trip expensive, so the whole page goes in at once."""
+    from app.repositories import videos as videos_repo
+
+    batches: list[int] = []
+    real = videos_repo.add_many_to_path
+
+    async def spy(db: Any, path_id: uuid.UUID, entries: Any) -> None:
+        batches.append(len(entries))
+        await real(db, path_id, entries)
+
+    monkeypatch.setattr(videos_repo, "add_many_to_path", spy)
+    path = await create(auth_client, alice)
+    resp = await auth_client.post(
+        IMPORT,
+        json={"learning_path_id": path["id"], "youtube_url": playlist_url()},
+        headers=alice.h,
+    )
+    assert resp.status_code == 200
+    added = resp.json()["added"]
+    assert added > 1
+    assert batches == [added]

@@ -37,19 +37,6 @@ async def upsert_video(db: AsyncSession, meta: VideoMetadata) -> Video:
     return result.scalar_one()
 
 
-async def get_membership(
-    db: AsyncSession, path_id: uuid.UUID, video_id: uuid.UUID
-) -> LearningPathVideo | None:
-    return (
-        await db.execute(
-            select(LearningPathVideo).where(
-                LearningPathVideo.learning_path_id == path_id,
-                LearningPathVideo.video_id == video_id,
-            )
-        )
-    ).scalar_one_or_none()
-
-
 async def next_position(db: AsyncSession, path_id: uuid.UUID) -> int:
     current = (
         await db.execute(
@@ -68,6 +55,38 @@ async def add_to_path(
     db.add(membership)
     await db.flush()
     return membership
+
+
+async def add_many_to_path(
+    db: AsyncSession, path_id: uuid.UUID, entries: Sequence[tuple[uuid.UUID, int]]
+) -> None:
+    """Append several videos in one statement (one database round trip, however many)."""
+    if not entries:
+        return
+    await db.execute(
+        insert(LearningPathVideo).values(
+            [
+                {"learning_path_id": path_id, "video_id": video_id, "position": position}
+                for video_id, position in entries
+            ]
+        )
+    )
+
+
+async def membership_and_next_position(
+    db: AsyncSession, path_id: uuid.UUID, video_id: uuid.UUID
+) -> tuple[int | None, int]:
+    """In one query: this video's position in the path (None if absent) and the next free one."""
+    row = (
+        await db.execute(
+            select(
+                func.max(LearningPathVideo.position),
+                func.max(LearningPathVideo.position).filter(LearningPathVideo.video_id == video_id),
+            ).where(LearningPathVideo.learning_path_id == path_id)
+        )
+    ).one()
+    highest, existing = row
+    return existing, (highest or 0) + 1
 
 
 async def remove_from_path(

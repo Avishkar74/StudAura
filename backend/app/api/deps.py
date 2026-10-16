@@ -9,6 +9,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import user_cache
 from app.core.auth import unauthorized, verify_supabase_token
 from app.core.errors import ApiError
 from app.core.settings import settings
@@ -41,12 +42,17 @@ async def get_current_user(
     claims = await verify_supabase_token(credentials.credentials)
     if not claims.email:
         raise unauthorized("Token missing email")
+    cached = user_cache.get(claims.user_id, claims.email)
+    if cached is not None:
+        return cached
     try:
-        return await users_repo.ensure_user(db, claims.user_id, claims.email, claims.display_name)
+        user = await users_repo.ensure_user(db, claims.user_id, claims.email, claims.display_name)
     except IntegrityError:
         # Same email already belongs to a different user id (e.g. a recreated Supabase account).
         await db.rollback()
         raise HTTPException(status_code=409, detail="Account conflict") from None
+    user_cache.put(user)
+    return user
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]

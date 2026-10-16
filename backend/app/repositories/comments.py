@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import VideoComment
@@ -30,18 +30,20 @@ async def add_comment(
     body: str,
     timestamp_seconds: int | None,
 ) -> VideoComment:
-    comment = VideoComment(
-        user_id=user_id,
-        video_id=video_id,
-        body=body,
-        timestamp_seconds=timestamp_seconds,
-        # Real insertion time, so comments added in quick succession still sort correctly.
-        created_at=func.clock_timestamp(),
+    """Insert and return the row in one statement (no separate flush and refresh)."""
+    result = await db.execute(
+        insert(VideoComment)
+        .values(
+            user_id=user_id,
+            video_id=video_id,
+            body=body,
+            timestamp_seconds=timestamp_seconds,
+            # Real insertion time, so comments added in quick succession still sort correctly.
+            created_at=func.clock_timestamp(),
+        )
+        .returning(VideoComment)
     )
-    db.add(comment)
-    await db.flush()
-    await db.refresh(comment)
-    return comment
+    return result.scalar_one()
 
 
 async def delete_comment(db: AsyncSession, user_id: uuid.UUID, comment_id: uuid.UUID) -> bool:
