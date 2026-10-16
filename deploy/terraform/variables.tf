@@ -142,7 +142,7 @@ variable "node_disk_size_gb" {
   default     = 20
 }
 
-# --- Deploys from GitHub Actions ----------------------------------------------------------------
+# --- Application ---------------------------------------------------------------------------------
 
 variable "app_namespace" {
   description = "Kubernetes namespace the application is deployed to."
@@ -150,20 +150,12 @@ variable "app_namespace" {
   default     = "studaura"
 }
 
-variable "create_github_oidc_provider" {
+variable "enable_irsa" {
   description = <<-EOT
-    Create the account-wide IAM OIDC provider for GitHub Actions. An account can have only one, so
-    set this to false if it already exists (the role below then reuses it).
+    Create the cluster's IAM OIDC provider so pods can assume IAM roles (IRSA). Nothing in this
+    project needs it, and some AWS Organizations forbid iam:CreateOpenIDConnectProvider, so it is
+    off by default.
   EOT
   type        = bool
-  default     = true
-}
-
-variable "github_oidc_subjects" {
-  description = <<-EOT
-    Which GitHub Actions runs may assume the deploy role, as OIDC `sub` claims. The default allows
-    only workflows running on the main branch of this repository.
-  EOT
-  type        = list(string)
-  default     = ["repo:Avishkar74/StudAura:ref:refs/heads/main"]
+  default     = false
 }

@@ -272,42 +272,27 @@ run "spot_nodes_when_asked" {
   }
 }
 
-# --- GitHub Actions --------------------------------------------------------------------------------
+# --- IRSA -------------------------------------------------------------------------------------------
 
-run "github_deploys_use_oidc_and_are_limited_to_the_app_namespace" {
+run "irsa_is_off_by_default" {
   command = plan
 
   assert {
-    condition     = length(aws_iam_openid_connect_provider.github) == 1
-    error_message = "The GitHub OIDC provider is created by default."
-  }
-
-  assert {
-    condition     = aws_eks_access_policy_association.github_deploy.access_scope[0].type == "namespace"
-    error_message = "The deploy role must be scoped to a namespace, not the whole cluster."
-  }
-
-  assert {
-    condition     = contains(aws_eks_access_policy_association.github_deploy.access_scope[0].namespaces, "studaura")
-    error_message = "The deploy role should be limited to the app namespace."
-  }
-
-  assert {
-    condition     = endswith(aws_eks_access_policy_association.github_deploy.policy_arn, "/AmazonEKSAdminPolicy")
-    error_message = "Namespace admin, not cluster admin."
+    condition     = length(aws_iam_openid_connect_provider.eks) == 0
+    error_message = "The cluster OIDC provider needs iam:CreateOpenIDConnectProvider, which some organizations deny."
   }
 }
 
-run "an_existing_github_provider_is_reused" {
+run "irsa_can_be_enabled" {
   command = plan
 
   variables {
-    create_github_oidc_provider = false
+    enable_irsa = true
   }
 
   assert {
-    condition     = length(aws_iam_openid_connect_provider.github) == 0
-    error_message = "No second OIDC provider should be created."
+    condition     = length(aws_iam_openid_connect_provider.eks) == 1
+    error_message = "enable_irsa should create the provider."
   }
 }
 
