@@ -43,8 +43,8 @@ test.describe('signed out', () => {
 
 test('the API answers its probes through the same origin', async ({ request }) => {
   test.skip(
-    !process.env.E2E_BASE_URL,
-    'needs a deployed stack (the Vite dev server has no /health)',
+    !process.env.E2E_DEPLOYED,
+    'needs a deployed stack (a static preview has no /health and no API)',
   )
   expect((await request.get('/health')).status()).toBe(200)
   // Auth is enforced: no token, no data.

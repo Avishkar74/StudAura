@@ -21,7 +21,7 @@ push to main ──► backend ─┐
 | `images` (backend, frontend) | PR, main | Builds the production image (backend `runtime` stage, frontend `prod` stage), checks it runs as a non-root user, starts it and smoke-tests it: backend `GET /health`, `/metrics`, and `/ready` answering 503 with no database; frontend `/healthz`, `/`, a deep link falling back to the SPA, and the security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) on the page. |
 | `publish` (backend, frontend) | main only, after the three above | Builds, scans with Trivy, then pushes `ghcr.io/<owner>/studaura-backend` and `studaura-frontend`, tagged with the commit SHA only (never `latest`). |
 | `helm` | PR, main | Installs a pinned, checksum-verified Helm, runs `helm lint --strict`, checks that the chart refuses to render without `image.tag`, renders it with monitoring on and scans the rendered manifests with Trivy (HIGH and CRITICAL fail). |
-| `deploy` | main only, after `publish`, when `DEPLOY_ENABLED=true` | `helm upgrade --install --atomic --wait` of the chart on EKS with this commit's SHA as `image.tag`; the migration runs as a pre-upgrade hook Job. A failed rollout rolls back. |
+| `deploy` | main only, after `publish`, when `DEPLOY_ENABLED=true` | `helm upgrade --install --rollback-on-failure --wait` of the chart on EKS with this commit's SHA as `image.tag`; the migration runs as a pre-upgrade hook Job. A failed rollout rolls back. |
 
 Third-party actions are pinned to commit SHAs (the version is in a comment). Jobs get read-only
 `contents` access; only `publish` gets `packages: write`, and pull requests never reach it.

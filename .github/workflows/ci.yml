@@ -433,7 +433,7 @@ jobs:
           kubectl config use-context studaura
       - name: Helm upgrade (this commit's images)
         run: |
-          helm upgrade --install studaura helm/studaura -n studaura             --set image.tag=${{ github.sha }}             --set "backend.config.CORS_ORIGINS=${{ vars.PUBLIC_ORIGIN }}"             --set monitoring.enabled=${{ vars.MONITORING_ENABLED == 'true' }}             --atomic --wait --timeout 8m
+          helm upgrade --install studaura helm/studaura -n studaura             --set image.tag=${{ github.sha }}             --set "backend.config.CORS_ORIGINS=${{ vars.PUBLIC_ORIGIN }}"             --set monitoring.enabled=${{ vars.MONITORING_ENABLED == 'true' }}             --rollback-on-failure --wait --timeout 8m
       - name: Show what is running
         run: |
           kubectl get pods,svc,ingress
