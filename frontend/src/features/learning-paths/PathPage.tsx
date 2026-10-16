@@ -1,5 +1,6 @@
-import { ArrowLeft, Play } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { ArrowLeft, Pencil, Play, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '@/api/client'
 import type { PathVideo } from '@/api/types'
 import { useShell } from '@/app/shell/shellContext'
@@ -8,8 +9,10 @@ import { ProgressBar } from '@/components/ProgressBar'
 import { StatusBadge } from '@/components/StatusBadge'
 import { usePath, usePathVideos } from '@/features/player/queries'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { formatTimestamp } from '@/lib/time'
+import { formatDate, formatTimestamp } from '@/lib/time'
 import { pickContinueTarget } from './continue'
+import { DeletePathDialog } from './DeletePathDialog'
+import { PathFormModal } from './PathFormModal'
 
 function VideoRow({ pathId, item }: { pathId: string; item: PathVideo }) {
   const { video } = item
@@ -65,6 +68,8 @@ export function PathPage() {
   const path = usePath(pathId)
   const videos = usePathVideos(pathId)
   const { openAddVideo, openImportPlaylist } = useShell()
+  const navigate = useNavigate()
+  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null)
   useDocumentTitle(path.data?.title ?? 'Learning path')
 
   if (path.isError) {
@@ -120,7 +125,7 @@ export function PathPage() {
           <ProgressBar value={p.completion_pct} label={`${p.title} progress`} />
           <p className="mt-1.5 text-sm text-text-secondary">
             {p.completed_videos} of {p.total_videos} completed · {Math.round(p.completion_pct)}%
-            {p.target_date && ` · Target: ${new Date(p.target_date).toLocaleDateString()}`}
+            {p.target_date && ` · Target: ${formatDate(p.target_date)}`}
           </p>
         </div>
         <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-text-secondary">
@@ -152,6 +157,14 @@ export function PathPage() {
           </Button>
           <Button variant="secondary" onClick={() => openImportPlaylist(pathId)}>
             Import playlist
+          </Button>
+          <Button variant="secondary" onClick={() => setDialog('edit')}>
+            <Pencil className="mr-2 size-4" aria-hidden />
+            Edit path
+          </Button>
+          <Button variant="secondary" onClick={() => setDialog('delete')}>
+            <Trash2 className="mr-2 size-4" aria-hidden />
+            Delete path
           </Button>
         </div>
       </header>
@@ -189,6 +202,14 @@ export function PathPage() {
             <VideoRow key={item.video.id} pathId={pathId} item={item} />
           ))}
         </ol>
+      )}
+      {dialog === 'edit' && <PathFormModal path={p} onClose={() => setDialog(null)} />}
+      {dialog === 'delete' && (
+        <DeletePathDialog
+          path={p}
+          onClose={() => setDialog(null)}
+          onDeleted={() => navigate('/learning-paths', { replace: true })}
+        />
       )}
     </div>
   )

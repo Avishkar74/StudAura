@@ -1,10 +1,17 @@
-import { FolderOpen, GraduationCap, Play } from 'lucide-react'
+import { FolderOpen, GraduationCap, Pencil, Play, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { LearningPath } from '@/api/types'
 import { ProgressBar } from '@/components/ProgressBar'
 import { formatDate, formatRelative } from '@/lib/time'
 
-export function PathCard({ path }: { path: LearningPath }) {
+interface PathCardProps {
+  path: LearningPath
+  /** When given, the card shows edit and delete buttons. */
+  onEdit?: (path: LearningPath) => void
+  onDelete?: (path: LearningPath) => void
+}
+
+export function PathCard({ path, onEdit, onDelete }: PathCardProps) {
   const started = path.completed_videos > 0 || path.in_progress_videos > 0 || path.last_activity_at
   const Icon = started ? Play : FolderOpen
 
@@ -14,13 +21,37 @@ export function PathCard({ path }: { path: LearningPath }) {
         <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-accent">
           <GraduationCap className="size-5" aria-hidden />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h3 className="line-clamp-2 font-semibold">{path.title}</h3>
           <p className="text-sm text-text-secondary">
             {path.total_videos} {path.total_videos === 1 ? 'video' : 'videos'}
             {path.target_date && <span> · Target {formatDate(path.target_date)}</span>}
           </p>
         </div>
+        {(onEdit || onDelete) && (
+          <div className="flex shrink-0 gap-1">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(path)}
+                aria-label={`Edit ${path.title}`}
+                className="rounded-lg p-2 text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+              >
+                <Pencil className="size-4" aria-hidden />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(path)}
+                aria-label={`Delete ${path.title}`}
+                className="rounded-lg p-2 text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </button>
+            )}
+          </div>
+        )}
       </div>
       {path.description && (
         <p className="line-clamp-2 text-sm text-text-secondary">{path.description}</p>

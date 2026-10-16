@@ -66,10 +66,9 @@ async def import_video(
         raise PathNotFoundError
 
     import_attempts_total.labels(result="success").inc()
-    existing = await videos_repo.get_membership(db, path_id, video.id)
+    existing, position = await videos_repo.membership_and_next_position(db, path_id, video.id)
     if existing is not None:
-        return ImportResult("skipped", "already_in_path", existing.position, video)
+        return ImportResult("skipped", "already_in_path", existing, video)
 
-    position = await videos_repo.next_position(db, path_id)
     await videos_repo.add_to_path(db, path_id, video.id, position)
     return ImportResult("added", None, position, video)

@@ -1,9 +1,9 @@
 import { Trash2 } from 'lucide-react'
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { ApiError } from '@/api/client'
 import { Button } from '@/components/Button'
 import { formatRelative, formatTimestamp } from '@/lib/time'
-import { useAddComment, useComments, useDeleteComment } from './queries'
+import { isPending, useAddComment, useComments, useDeleteComment } from './queries'
 
 export const MAX_COMMENT_CHARS = 2000
 
@@ -21,26 +21,42 @@ export function CommentsPanel({ videoId, getCurrentTime, onSeek }: CommentsPanel
   const add = useAddComment(videoId)
   const remove = useDeleteComment(videoId)
   const [text, setText] = useState('')
-  const [stamp, setStamp] = useState<number | null>(null)
+  // "Attach the time" is a choice; the time itself is read when the comment is sent, so a comment
+  // always carries the moment the student pressed Add, not the moment they ticked the box.
+  const [attach, setAttach] = useState(false)
+  const [liveStamp, setLiveStamp] = useState(0)
   const field = useId()
 
   const trimmed = text.trim()
-  const canSend = trimmed.length > 0 && text.length <= MAX_COMMENT_CHARS && !add.isPending
+  const canSend = trimmed.length > 0 && text.length <= MAX_COMMENT_CHARS
 
-  function toggleStamp(on: boolean) {
-    setStamp(on ? Math.floor(getCurrentTime() ?? 0) : null)
-  }
+  // While the box is ticked, the label follows the player so it never shows a stale time.
+  const clock = useRef(getCurrentTime)
+  useEffect(() => {
+    clock.current = getCurrentTime
+  })
+  useEffect(() => {
+    if (!attach) return
+    const read = () => setLiveStamp(Math.floor(clock.current() ?? 0))
+    read()
+    const timer = window.setInterval(read, 500)
+    return () => window.clearInterval(timer)
+  }, [attach])
 
   function submit(e: FormEvent) {
     e.preventDefault()
     if (!canSend) return
-    // The text stays in the box until the server has accepted it, so a failure loses nothing.
+    const body = trimmed
+    const at = attach ? Math.floor(getCurrentTime() ?? liveStamp) : null
+    // The comment shows up at once and the box clears; if the server refuses it, both come back.
+    setText('')
+    setAttach(false)
     add.mutate(
-      { body: trimmed, timestamp_seconds: stamp },
+      { body, timestamp_seconds: at },
       {
-        onSuccess: () => {
-          setText('')
-          setStamp(null)
+        onError: () => {
+          setText((current) => current || body)
+          setAttach(at !== null)
         },
       },
     )
@@ -68,12 +84,8 @@ export function CommentsPanel({ videoId, getCurrentTime, onSeek }: CommentsPanel
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input
-              type="checkbox"
-              checked={stamp !== null}
-              onChange={(e) => toggleStamp(e.target.checked)}
-            />
-            {stamp !== null ? `At ${formatTimestamp(stamp)}` : 'Attach the current video time'}
+            <input type="checkbox" checked={attach} onChange={(e) => setAttach(e.target.checked)} />
+            {attach ? `At ${formatTimestamp(liveStamp)}` : 'Attach the current video time'}
           </label>
           <div className="flex items-center gap-3">
             {text.length > MAX_COMMENT_CHARS * 0.9 && (
@@ -84,7 +96,7 @@ export function CommentsPanel({ videoId, getCurrentTime, onSeek }: CommentsPanel
               </span>
             )}
             <Button type="submit" disabled={!canSend}>
-              {add.isPending ? 'Adding…' : 'Add comment'}
+              Add comment
             </Button>
           </div>
         </div>
@@ -118,7 +130,11 @@ export function CommentsPanel({ videoId, getCurrentTime, onSeek }: CommentsPanel
         ) : (
           <ul className="flex flex-col gap-2">
             {list.data.map((c) => (
-              <li key={c.id} className="rounded-lg border border-border bg-surface-2 p-3 text-sm">
+              <li
+                key={c.id}
+                aria-busy={isPending(c)}
+                className={`rounded-lg border border-border bg-surface-2 p-3 text-sm ${isPending(c) ? 'opacity-70' : ''}`}
+              >
                 <p className="whitespace-pre-wrap break-words">{c.body}</p>
                 <div className="mt-2 flex items-center justify-between gap-2 text-xs text-text-muted">
                   <span className="flex items-center gap-2">
@@ -137,12 +153,12 @@ export function CommentsPanel({ videoId, getCurrentTime, onSeek }: CommentsPanel
                           {formatTimestamp(c.timestamp_seconds)}
                         </span>
                       ))}
-                    {formatRelative(c.created_at)}
+                    {isPending(c) ? 'Saving…' : formatRelative(c.created_at)}
                   </span>
                   <button
                     type="button"
                     onClick={() => remove.mutate(c.id)}
-                    disabled={remove.isPending && remove.variables === c.id}
+                    disabled={isPending(c) || (remove.isPending && remove.variables === c.id)}
                     aria-label="Delete comment"
                     className="rounded p-1 text-text-secondary hover:text-text-primary disabled:opacity-60"
                   >

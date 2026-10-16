@@ -90,6 +90,7 @@ async def import_playlist_page(
     position = await videos_repo.next_position(db, path_id)
 
     results: list[ItemResult] = []
+    to_add: list[tuple[uuid.UUID, int]] = []
     for entry in entries:
         video = videos.get(entry.youtube_video_id)
         if video is None:
@@ -108,13 +109,16 @@ async def import_playlist_page(
                 )
             )
         else:
-            await videos_repo.add_to_path(db, path_id, video.id, position)
+            to_add.append((video.id, position))
             results.append(
                 ItemResult(
                     entry.youtube_video_id, "added", video.title, position=position, video=video
                 )
             )
             position += 1
+
+    # One INSERT for the whole page: a distant database makes every round trip expensive.
+    await videos_repo.add_many_to_path(db, path_id, to_add)
 
     result = PageResult(results, page.total_results, page.next_page_token)
     import_attempts_total.labels(result="partial" if result.count("failed") else "success").inc()

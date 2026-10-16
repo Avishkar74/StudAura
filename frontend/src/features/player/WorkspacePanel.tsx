@@ -2,23 +2,22 @@ import { useId, useRef, type KeyboardEvent } from 'react'
 import { CommentsPanel } from '@/features/comments/CommentsPanel'
 import { NotesPanel } from '@/features/notes/NotesPanel'
 import { usePersistentState } from '@/hooks/usePersistentState'
+import { ProgressPanel, type ProgressPanelProps } from './ProgressPanel'
 
 const TABS = ['Notes', 'Comments', 'Progress'] as const
 type Tab = (typeof TABS)[number]
-
-function ComingSoon({ what }: { what: string }) {
-  return <p className="text-sm text-text-secondary">{what} are coming soon.</p>
-}
 
 /** Right-hand workspace panel (PRD 6.5). The selected tab lasts for the browser session. */
 export function WorkspacePanel({
   videoId,
   getCurrentTime = () => null,
   onSeek,
+  progress,
 }: {
   videoId: string
   getCurrentTime?: () => number | null
   onSeek?: (seconds: number) => void
+  progress: ProgressPanelProps
 }) {
   const [tab, setTab] = usePersistentState<Tab>('studaura.workspace.tab', 'Notes', 'session')
   const base = useId()
@@ -78,7 +77,7 @@ export function WorkspacePanel({
         {tab === 'Comments' && (
           <CommentsPanel videoId={videoId} getCurrentTime={getCurrentTime} onSeek={onSeek} />
         )}
-        {tab === 'Progress' && <ComingSoon what="Path progress details" />}
+        {tab === 'Progress' && <ProgressPanel {...progress} />}
       </div>
     </aside>
   )

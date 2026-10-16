@@ -12,8 +12,9 @@ import { AllPathsPage } from '@/features/learning-paths/AllPathsPage'
 import { PathPage } from '@/features/learning-paths/PathPage'
 import { PathWorkspacePage, SavedWorkspacePage } from '@/features/player/WorkspacePages'
 import { RevisionPage } from '@/features/revisions/RevisionPage'
+import { ToastProvider } from '@/components/toast/ToastProvider'
+import { SettingsPage } from '@/features/settings/SettingsPage'
 import { AppShell } from './AppShell'
-import { PlaceholderPage } from './PlaceholderPage'
 
 function MissingConfig() {
   return (
@@ -31,37 +32,34 @@ export function App() {
   if (!isSupabaseConfigured) return <MissingConfig />
 
   return (
-    <Routes>
-      <Route element={<RedirectIfAuthed />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-      </Route>
-
-      {/* "/" is the landing page for visitors and the dashboard for signed-in users. */}
-      <Route path="/" element={<RootGate />}>
-        <Route index element={<HomePage />} />
-      </Route>
-
-      <Route element={<RequireAuth />}>
-        <Route element={<AppShell />}>
-          <Route path="/learning-paths" element={<AllPathsPage />} />
-          <Route path="/learning-paths/:pathId" element={<PathPage />} />
-          <Route path="/learn/:pathId/:videoId" element={<PathWorkspacePage />} />
-          <Route path="/learn/saved/:videoId" element={<SavedWorkspacePage />} />
-          <Route path="/goals" element={<GoalsPage />} />
-          <Route path="/revision" element={<RevisionPage />} />
-          <Route path="/notes" element={<NotesPage />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route
-            path="/settings"
-            element={
-              <PlaceholderPage title="Settings" description="Your profile and preferences." />
-            }
-          />
+    <ToastProvider>
+      <Routes>
+        <Route element={<RedirectIfAuthed />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
         </Route>
-      </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* "/" is the landing page for visitors and the dashboard for signed-in users. */}
+        <Route path="/" element={<RootGate />}>
+          <Route index element={<HomePage />} />
+        </Route>
+
+        <Route element={<RequireAuth />}>
+          <Route element={<AppShell />}>
+            <Route path="/learning-paths" element={<AllPathsPage />} />
+            <Route path="/learning-paths/:pathId" element={<PathPage />} />
+            <Route path="/learn/:pathId/:videoId" element={<PathWorkspacePage />} />
+            <Route path="/learn/saved/:videoId" element={<SavedWorkspacePage />} />
+            <Route path="/goals" element={<GoalsPage />} />
+            <Route path="/revision" element={<RevisionPage />} />
+            <Route path="/notes" element={<NotesPage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ToastProvider>
   )
 }

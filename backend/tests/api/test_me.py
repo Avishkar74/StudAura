@@ -209,3 +209,130 @@ async def test_user_id_in_query_is_ignored(
     me, other = uuid.uuid4(), uuid.uuid4()
     resp = await auth_client.get(f"/api/v1/me?user_id={other}", headers=bearer(make_token(sub=me)))
     assert resp.json()["id"] == str(me)
+
+
+# --- Updating the profile -------------------------------------------------------------------
+
+
+async def test_display_name_can_be_changed(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory
+) -> None:
+    token = make_token(sub=uuid.uuid4(), email="grace@example.test")
+    resp = await auth_client.patch(
+        "/api/v1/me", json={"display_name": "  Grace Hopper  "}, headers=bearer(token)
+    )
+    assert resp.status_code == 200
+    assert resp.json()["display_name"] == "Grace Hopper"
+    assert (await auth_client.get("/api/v1/me", headers=bearer(token))).json()[
+        "display_name"
+    ] == "Grace Hopper"
+
+
+async def test_a_blank_display_name_clears_it(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory
+) -> None:
+    token = make_token(sub=uuid.uuid4(), email="blank@example.test", display_name="Someone")
+    resp = await auth_client.patch(
+        "/api/v1/me", json={"display_name": "   "}, headers=bearer(token)
+    )
+    assert resp.status_code == 200
+    assert resp.json()["display_name"] is None
+
+
+async def test_an_overlong_display_name_is_422(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory
+) -> None:
+    resp = await auth_client.patch(
+        "/api/v1/me", json={"display_name": "x" * 101}, headers=bearer(make_token())
+    )
+    assert resp.status_code == 422
+
+
+async def test_updating_the_profile_requires_a_token(auth_client: httpx.AsyncClient) -> None:
+    resp = await auth_client.patch("/api/v1/me", json={"display_name": "Nobody"})
+    assert resp.status_code == 401
+
+
+async def test_the_email_cannot_be_changed_here(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory
+) -> None:
+    token = make_token(sub=uuid.uuid4(), email="fixed@example.test")
+    resp = await auth_client.patch(
+        "/api/v1/me",
+        json={"display_name": "Fixed", "email": "other@example.test"},
+        headers=bearer(token),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["email"] == "fixed@example.test"
+
+
+async def test_a_user_only_changes_their_own_name(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory
+) -> None:
+    a, b = uuid.uuid4(), uuid.uuid4()
+    ta = make_token(sub=a, email="a2@x.test", display_name="A")
+    tb = make_token(sub=b, email="b2@x.test", display_name="B")
+    await auth_client.get("/api/v1/me", headers=bearer(tb))
+    await auth_client.patch("/api/v1/me", json={"display_name": "Changed"}, headers=bearer(ta))
+    assert (await auth_client.get("/api/v1/me", headers=bearer(tb))).json()["display_name"] == "B"
+
+
+# --- The user cache -------------------------------------------------------------------------
+
+
+async def test_a_cached_user_skips_the_database_read(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.core import user_cache
+    from app.repositories import users as users_repo
+
+    monkeypatch.setattr(user_cache, "ttl_seconds", lambda: 60.0)
+    user_cache.clear()
+    real = users_repo.ensure_user
+    calls: list[uuid.UUID] = []
+
+    async def spy(db: AsyncSession, user_id: uuid.UUID, *rest: object) -> User:
+        calls.append(user_id)
+        return await real(db, user_id, *rest)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(users_repo, "ensure_user", spy)
+    uid = uuid.uuid4()
+    for _ in range(3):
+        resp = await auth_client.get(
+            "/api/v1/me", headers=bearer(make_token(sub=uid, email="cache@example.test"))
+        )
+        assert resp.status_code == 200
+    assert calls == [uid]
+    user_cache.clear()
+
+
+async def test_a_changed_email_bypasses_the_cache(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.core import user_cache
+
+    monkeypatch.setattr(user_cache, "ttl_seconds", lambda: 60.0)
+    user_cache.clear()
+    uid = uuid.uuid4()
+    await auth_client.get("/api/v1/me", headers=bearer(make_token(sub=uid, email="c1@x.test")))
+    resp = await auth_client.get(
+        "/api/v1/me", headers=bearer(make_token(sub=uid, email="c2@x.test"))
+    )
+    assert resp.json()["email"] == "c2@x.test"
+    user_cache.clear()
+
+
+async def test_a_profile_update_is_not_hidden_by_the_cache(
+    auth_client: httpx.AsyncClient, make_token: TokenFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.core import user_cache
+
+    monkeypatch.setattr(user_cache, "ttl_seconds", lambda: 60.0)
+    user_cache.clear()
+    token = make_token(sub=uuid.uuid4(), email="fresh@example.test")
+    await auth_client.get("/api/v1/me", headers=bearer(token))
+    await auth_client.patch("/api/v1/me", json={"display_name": "Fresh"}, headers=bearer(token))
+    assert (await auth_client.get("/api/v1/me", headers=bearer(token))).json()[
+        "display_name"
+    ] == "Fresh"
+    user_cache.clear()

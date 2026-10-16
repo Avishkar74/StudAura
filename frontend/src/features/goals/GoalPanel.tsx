@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/Button'
 import { ProgressBar } from '@/components/ProgressBar'
-import { formatDuration } from '@/lib/time'
+import { formatDuration, formatMinutes } from '@/lib/time'
 import { GoalDialog } from './GoalDialog'
 import { useGoal } from './queries'
 
@@ -44,20 +44,26 @@ export function GoalPanel() {
 
   const targetSeconds = target * 60
   const pct = (watched / targetSeconds) * 100
-  const remaining = Math.max(0, targetSeconds - watched)
+  // Watched time rounds down and time left rounds up, so the two always add up to the goal
+  // ("2 / 60 min, 58 min remaining") instead of leaving a minute unaccounted for.
+  const watchedMinutes = Math.floor(watched / 60)
+  const remainingMinutes = Math.max(0, Math.ceil((targetSeconds - watched) / 60))
 
   return (
     <div className="flex flex-col gap-3">
       <ProgressBar value={pct} label="Today's viewing goal" />
       <p className="text-sm">
-        <strong>{Math.floor(watched / 60)}</strong> / {target} min
+        <strong>{watchedMinutes}</strong> / {target} min
         {goal.data.goal_achieved ? (
           <span className="text-success">
             {' '}
             — Daily goal reached — {formatDuration(watched)} today
           </span>
         ) : (
-          <span className="text-text-secondary"> — {formatDuration(remaining)} remaining</span>
+          <span className="text-text-secondary">
+            {' '}
+            — {formatMinutes(remainingMinutes)} remaining
+          </span>
         )}
       </p>
       <Button variant="secondary" className="self-start" onClick={() => setEditing(true)}>

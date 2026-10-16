@@ -1,10 +1,13 @@
 import { FolderPlus, ListPlus, Plus, Video, X } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import type { PathSort } from '@/api/types'
+import type { LearningPath, PathSort } from '@/api/types'
 import { useShell } from '@/app/shell/shellContext'
 import { Button } from '@/components/Button'
 import { PathCard } from '@/features/dashboard/PathCard'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
+import { DeletePathDialog } from './DeletePathDialog'
+import { PathFormModal } from './PathFormModal'
 import { usePathList } from './queries'
 
 const SORTS: { value: PathSort; label: string }[] = [
@@ -27,6 +30,8 @@ export function AllPathsPage() {
   const sortParam = params.get('sort')
   const sort: PathSort = isSort(sortParam) ? sortParam : 'recent'
   const paths = usePathList(sort, q)
+  const [editing, setEditing] = useState<LearningPath | null>(null)
+  const [deleting, setDeleting] = useState<LearningPath | null>(null)
 
   function setSort(next: PathSort) {
     const copy = new URLSearchParams(params)
@@ -164,11 +169,13 @@ export function AllPathsPage() {
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {items.map((p) => (
             <li key={p.id}>
-              <PathCard path={p} />
+              <PathCard path={p} onEdit={setEditing} onDelete={setDeleting} />
             </li>
           ))}
         </ul>
       )}
+      {editing && <PathFormModal path={editing} onClose={() => setEditing(null)} />}
+      {deleting && <DeletePathDialog path={deleting} onClose={() => setDeleting(null)} />}
     </div>
   )
 }
