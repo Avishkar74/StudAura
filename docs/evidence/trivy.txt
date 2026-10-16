@@ -1,0 +1,14 @@
+Trivy scan of the images published by main run 38899150080 (HIGH and CRITICAL, fixed vulnerabilities)
+
+== studaura-backend
+│ ghcr.io/avishkar74/studaura-backend:90c2deb48778ef24d82b9f30212a116204f0c7cb     │   debian   │        0        │    -    │
+│ (debian 13.7)                                                                    │            │                 │         │
+45 language package manifests were scanned as well
+Legend: 0 = clean (no HIGH or CRITICAL finding that has a fix available)
+
+== studaura-frontend
+│ ghcr.io/avishkar74/studaura-frontend:90c2deb48778ef24d82b9f30212a116204f0c7cb │ alpine │        0        │    -    │
+│ (alpine 3.24.2)                                                               │        │                 │         │
+Static React bundle served by nginx: the image holds no language package manifests
+Legend: 0 = clean (no HIGH or CRITICAL finding that has a fix available)
+

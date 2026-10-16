@@ -1,0 +1,28 @@
+$ kubectl get nodes
+NAME                                              STATUS   ROLES    AGE   VERSION
+ip-10-0-136-156.ap-southeast-2.compute.internal   Ready    <none>   49m   v1.34.11-eks-b9510e3
+ip-10-0-148-145.ap-southeast-2.compute.internal   Ready    <none>   49m   v1.34.11-eks-b9510e3
+
+$ kubectl get pods,svc,ingress,hpa -n studaura
+NAME                                     READY   STATUS    RESTARTS   AGE
+pod/studaura-backend-74b7fdb9b6-2nnsm    1/1     Running   0          15m
+pod/studaura-backend-74b7fdb9b6-nhlm5    1/1     Running   0          15m
+pod/studaura-frontend-8459b75556-ld592   1/1     Running   0          15m
+pod/studaura-frontend-8459b75556-vkx4t   1/1     Running   0          15m
+
+NAME                        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/studaura-backend    ClusterIP   172.20.245.61   <none>        80/TCP    26m
+service/studaura-frontend   ClusterIP   172.20.186.18   <none>        80/TCP    26m
+
+NAME                                 CLASS   HOSTS   ADDRESS                                                                              PORTS   AGE
+ingress.networking.k8s.io/studaura   nginx   *       a4f65d523ff5b465faab6fd5d57fe662-93b4ff512e9eb19c.elb.ap-southeast-2.amazonaws.com   80      26m
+
+NAME                                                    REFERENCE                      TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/studaura-backend    Deployment/studaura-backend    cpu: 2%/70%   2         4         2          26m
+horizontalpodautoscaler.autoscaling/studaura-frontend   Deployment/studaura-frontend   cpu: 4%/70%   2         4         2          26m
+
+$ helm list -A
+NAME         	NAMESPACE    	REVISION	UPDATED                              	STATUS  	CHART                       	APP VERSION
+argocd       	argocd       	1       	2026-10-16 17:37:22.3547612 +0530 IST	deployed	argo-cd-10.10.5             	v3.5.5     
+ingress-nginx	ingress-nginx	1       	2026-10-16 17:31:34.0970408 +0530 IST	deployed	ingress-nginx-4.15.1        	1.15.1     
+monitoring   	monitoring   	1       	2026-10-16 17:34:21.6271137 +0530 IST	deployed	kube-prometheus-stack-92.9.0	v0.94.1    

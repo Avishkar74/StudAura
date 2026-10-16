@@ -108,8 +108,8 @@ to get a build through.
    `Backend (ruff, mypy, pytest)`, `Frontend (eslint, tsc, vitest, build)`, `Terraform (fmt,
    validate, test, Trivy)` and the two `Image` checks. The checks appear in the list only after they have run once.
 
-No secrets are needed: pushing to GHCR uses the workflow's own `GITHUB_TOKEN`. Deploying to AWS
-(M16 and later) will use GitHub OIDC, not stored keys.
+No secrets are needed: pushing to GHCR uses the workflow's own `GITHUB_TOKEN`. Deploying uses no AWS or
+cluster credentials either: CI only moves the `deploy` branch and ArgoCD pulls from it (see below).
 
 ## Running the same checks locally
 
@@ -129,11 +129,10 @@ docker run --rm -p 8000:8000 -e APP_ENV=test studaura-backend:local   # then GET
 docker run --rm -p 8080:8080 studaura-frontend:local                   # then GET /healthz
 ```
 
-## Not here yet
+## Not done yet
 
-- E2E tests with Playwright on main (TRD 17): added with the accessibility and E2E pass (M19).
-- The Helm deploy and the post-deploy smoke test (M17) will extend this workflow. They will assume
-  the role from `deploy/terraform` through GitHub OIDC, with no stored AWS keys.
+- Signed-in E2E specs in CI (they need a dedicated test account; they skip without one).
+- Persistent Prometheus storage and TLS in front of the Ingress.
 
 ## Deploying with ArgoCD
 

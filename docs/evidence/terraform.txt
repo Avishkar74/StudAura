@@ -1,0 +1,61 @@
+$ terraform state list | wc -l
+41
+
+$ terraform state list
+data.aws_availability_zones.available
+data.aws_caller_identity.current
+data.aws_iam_policy_document.eks_assume
+data.aws_iam_policy_document.flow_logs_assume
+data.aws_iam_policy_document.flow_logs_write
+data.aws_iam_policy_document.node_assume
+aws_cloudwatch_log_group.cluster
+aws_cloudwatch_log_group.vpc_flow
+aws_default_security_group.default
+aws_eip.nat[0]
+aws_eks_addon.coredns
+aws_eks_addon.kube_proxy
+aws_eks_addon.metrics_server[0]
+aws_eks_addon.vpc_cni
+aws_eks_cluster.main
+aws_eks_node_group.main
+aws_flow_log.vpc
+aws_iam_role.cluster
+aws_iam_role.flow_logs
+aws_iam_role.node
+aws_iam_role_policy.flow_logs
+aws_iam_role_policy_attachment.cluster
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"]
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"]
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"]
+aws_internet_gateway.main
+aws_kms_alias.eks_secrets
+aws_kms_key.eks_secrets
+aws_launch_template.nodes
+aws_nat_gateway.main[0]
+aws_route_table.private[0]
+aws_route_table.public
+aws_route_table_association.private[0]
+aws_route_table_association.private[1]
+aws_route_table_association.public[0]
+aws_route_table_association.public[1]
+aws_subnet.private[0]
+aws_subnet.private[1]
+aws_subnet.public[0]
+aws_subnet.public[1]
+aws_vpc.main
+
+$ terraform output
+app_namespace = "studaura"
+cluster_endpoint = "https://886F55A3789369460D2B39D4368FFDFD.gr7.ap-southeast-2.eks.amazonaws.com"
+cluster_name = "studaura-demo"
+private_subnet_ids = [
+  "subnet-0cefde42983e4b7e3",
+  "subnet-0b42350449937ff37",
+]
+public_subnet_ids = [
+  "subnet-0581cb56e06b9cb27",
+  "subnet-06a283c298a1c6136",
+]
+region = "ap-southeast-2"
+update_kubeconfig_command = "aws eks update-kubeconfig --region ap-southeast-2 --name studaura-demo"
+vpc_id = "vpc-0a8577e92ef8cb503"
