@@ -27,9 +27,10 @@ grafana:
     existingSecret: grafana-admin
     userKey: admin-user
     passwordKey: admin-password
+  # Grafana 12 sits at about 240 MiB; a 256 MiB limit got it OOM-killed (502 from the Ingress).
   resources:
-    requests: { cpu: 50m, memory: 128Mi }
-    limits: { memory: 256Mi }
+    requests: { cpu: 50m, memory: 256Mi }
+    limits: { memory: 512Mi }
   # Load dashboards from any ConfigMap labelled grafana_dashboard=1 (the StudAura chart ships one).
   sidecar:
     dashboards:
