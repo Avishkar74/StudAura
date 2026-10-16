@@ -190,6 +190,39 @@ Everything below was produced from this repository on a cluster built by `terraf
 
 ![Backend /metrics output](docs/screenshots/backend-metrics.png)
 
+**Infrastructure.** The VPC, subnets, EKS cluster and node group were created by `terraform apply`
+in Sydney (`ap-southeast-2`): two public and two private subnets across two zones, two `Ready`
+nodes.
+
+![VPC resource map: 4 subnets in 2 zones](docs/screenshots/aws-vpc.png)
+
+![Subnets of the VPC](docs/screenshots/aws-subnets.png)
+
+![EKS cluster studaura-demo](docs/screenshots/aws-eks-cluster.png)
+
+![EKS nodes: two c7i-flex.large instances, Ready](docs/screenshots/aws-eks-nodegroup.png)
+
+**GitOps.** ArgoCD keeps the cluster in sync with the `deploy` branch that CI updates:
+
+![ArgoCD applications list: studaura Healthy and Synced](docs/screenshots/argocd-applications.png)
+
+![ArgoCD resource tree of the studaura application](docs/screenshots/argocd-application.png)
+
+![ArgoCD application details: repository, revision and sync status](docs/screenshots/argocd-details.png)
+
+**CI/CD and security.** A green run on `main` publishes both images, scans them with Trivy and
+moves the `deploy` branch:
+
+![GitHub Actions run on main: all jobs green](docs/screenshots/github-actions-run.png)
+
+![Recent CI runs](docs/screenshots/github-actions-runs.png)
+
+![Trivy scan running against the pushed backend image](docs/screenshots/github-trivy-run.png)
+
+![Trivy report for the backend image: 0 vulnerabilities](docs/screenshots/trivy-report-backend.png)
+
+![Trivy report for the frontend image: 0 vulnerabilities](docs/screenshots/trivy-report-frontend.png)
+
 Grafana serves the provisioned StudAura dashboard (request rate, 5xx ratio, p95 latency by route,
 business counters) under `/grafana`; its source is
 [`helm/studaura/dashboards/studaura.json`](helm/studaura/dashboards/studaura.json).
