@@ -22,7 +22,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 # Dev image: adds test/lint tooling. Used by `docker compose` for `pytest`.
 FROM runtime AS dev
 USER root
-COPY pyproject.toml .
+COPY pyproject.toml pytest.ini ./
 COPY tests/ tests/
 RUN pip install ".[dev]" && chown -R appuser /app
 USER 10001
