@@ -5,6 +5,7 @@ import { RedirectIfAuthed, RequireAuth } from '@/features/auth/RequireAuth'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { HomePage } from '@/features/dashboard/HomePage'
 import { GoalsPage } from '@/features/goals/GoalsPage'
+import { RootGate } from '@/features/landing/RootGate'
 import { LibraryPage } from '@/features/library/LibraryPage'
 import { NotesPage } from '@/features/notes/NotesPage'
 import { AllPathsPage } from '@/features/learning-paths/AllPathsPage'
@@ -36,9 +37,13 @@ export function App() {
         <Route path="/signup" element={<SignupPage />} />
       </Route>
 
+      {/* "/" is the landing page for visitors and the dashboard for signed-in users. */}
+      <Route path="/" element={<RootGate />}>
+        <Route index element={<HomePage />} />
+      </Route>
+
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<HomePage />} />
           <Route path="/learning-paths" element={<AllPathsPage />} />
           <Route path="/learning-paths/:pathId" element={<PathPage />} />
           <Route path="/learn/:pathId/:videoId" element={<PathWorkspacePage />} />

@@ -17,9 +17,16 @@ beforeEach(() => {
 })
 
 describe('route protection', () => {
-  it('sends a signed-out visitor to the login page', async () => {
-    renderApp({ route: '/', signedIn: false })
+  it('sends a signed-out visitor who asks for a private page to the login page', async () => {
+    renderApp({ route: '/library', signedIn: false })
     expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
+  })
+
+  it('shows a signed-out visitor the landing page at the root', async () => {
+    renderApp({ route: '/', signedIn: false })
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /learning you actually finish/i }),
+    ).toBeInTheDocument()
   })
 
   it('returns the user to the page they wanted after signing in', async () => {
@@ -128,13 +135,15 @@ describe('sign up', () => {
 })
 
 describe('sign out', () => {
-  it('returns to the login page', async () => {
+  it('returns to the public landing page', async () => {
     const user = userEvent.setup()
     renderApp({ route: '/' })
     await user.click(await screen.findByRole('button', { name: 'Account menu' }))
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }))
     await waitFor(() => expect(authMock.auth.signOut).toHaveBeenCalled())
-    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /learning you actually finish/i }),
+    ).toBeInTheDocument()
   })
 })
 
