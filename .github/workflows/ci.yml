@@ -160,7 +160,7 @@ jobs:
           sudo install "$RUNNER_TEMP/helm-bin/helm" /usr/local/bin/helm
           rm helm.tgz
       - name: Lint
-        run: helm lint helm/studaura --strict --set image.tag=${{ github.sha }}
+        run: helm lint helm/studaura --strict --set image.tag=${{ github.sha }} --set monitoring.enabled=true
       - name: The chart refuses to render without an image tag
         run: |
           if helm template studaura helm/studaura >/dev/null 2>&1; then
@@ -170,7 +170,7 @@ jobs:
       - name: Render
         run: |
           mkdir -p "$RUNNER_TEMP/rendered"
-          helm template studaura helm/studaura -n studaura --set image.tag=${{ github.sha }} > "$RUNNER_TEMP/rendered/studaura.yaml"
+          helm template studaura helm/studaura -n studaura --set image.tag=${{ github.sha }} --set monitoring.enabled=true > "$RUNNER_TEMP/rendered/studaura.yaml"
       - name: Trivy misconfiguration scan of the rendered manifests
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:

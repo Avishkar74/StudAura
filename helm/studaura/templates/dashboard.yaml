@@ -1,0 +1,13 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.dashboard }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-dashboard
+  labels:
+    {{- include "studaura.labels" . | nindent 4 }}
+    # Grafana's sidecar loads every ConfigMap carrying this label.
+    grafana_dashboard: "1"
+data:
+  studaura.json: |-
+{{ .Files.Get "dashboards/studaura.json" | indent 4 }}
+{{- end }}

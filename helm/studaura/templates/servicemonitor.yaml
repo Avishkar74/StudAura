@@ -1,0 +1,48 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    {{- include "studaura.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "studaura.selector" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.interval }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "studaura.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: studaura
+      rules:
+        - alert: StudAuraBackendDown
+          expr: up{job="{{ .Release.Name }}-backend", namespace="{{ .Release.Namespace }}"} == 0
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: A StudAura backend pod is not being scraped
+        - alert: StudAuraHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{namespace="{{ .Release.Namespace }}", status="5xx"}[5m]))
+              / sum(rate(http_requests_total{namespace="{{ .Release.Namespace }}"}[5m])) > 0.05
+          for: 5m
+          labels: { severity: warning }
+          annotations:
+            summary: More than 5% of API requests are failing with 5xx
+        - alert: StudAuraDatabaseUnreachable
+          expr: min(db_readiness{namespace="{{ .Release.Namespace }}"}) == 0
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: The backend cannot reach the database
+{{- end }}

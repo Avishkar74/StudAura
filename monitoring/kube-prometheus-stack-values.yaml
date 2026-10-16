@@ -1,0 +1,74 @@
+# Values for prometheus-community/kube-prometheus-stack (Prometheus Operator, Prometheus, Grafana,
+# node-exporter, kube-state-metrics). Install:
+#   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+#     --version 92.9.0 -n monitoring --create-namespace -f monitoring/kube-prometheus-stack-values.yaml
+# The Grafana admin password lives in a Secret created out of band, never in this file:
+#   kubectl -n monitoring create secret generic grafana-admin \
+#     --from-literal=admin-user=admin --from-literal=admin-password=<password>
+
+# Small cluster, short retention, no persistent volumes (no EBS CSI driver is assumed): metrics
+# are lost when the Prometheus pod is rescheduled, which is fine for a demo.
+alertmanager:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    retention: 24h
+    resources:
+      requests: { cpu: 100m, memory: 400Mi }
+      limits: { memory: 800Mi }
+    # Pick up ServiceMonitors and rules from any namespace, not only those with the release label.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+
+grafana:
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 256Mi }
+  # Load dashboards from any ConfigMap labelled grafana_dashboard=1 (the StudAura chart ships one).
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s/grafana/"
+      serve_from_sub_path: true
+    users:
+      allow_sign_up: false
+    auth.anonymous:
+      enabled: false
+  # Served by ingress-nginx under /grafana, next to the application.
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    path: /grafana
+    pathType: Prefix
+    hosts: []
+
+# Control-plane components of a managed EKS cluster are not scrapeable.
+kubeEtcd: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeControllerManager: { enabled: false }
+
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 10m, memory: 24Mi }
+    limits: { memory: 64Mi }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 10m, memory: 48Mi }
+    limits: { memory: 128Mi }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 25m, memory: 64Mi }
+    limits: { memory: 192Mi }
