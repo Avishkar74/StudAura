@@ -155,6 +155,7 @@ commit SHAs; secrets are never in Git (`.gitignore` covers `.env`, `*.pem`, `*.t
 | [`helm/studaura`](helm/studaura) | Chart: backend and frontend Deployments (2 replicas, HPA, anti-affinity, non-root, read-only root filesystem, probes), ClusterIP Services, Ingress (`/` to the frontend, `/api` to the backend), PodDisruptionBudgets, an Alembic hook Job, and optional ServiceMonitor, alert rules and Grafana dashboard |
 | [`monitoring`](monitoring/README.md) | kube-prometheus-stack values; Grafana is served under `/grafana` |
 | [`deploy/ec2`](deploy/ec2/README.md) | The same app on a single EC2 instance with Docker Compose, for accounts that cannot create an EKS cluster |
+| [`frontend/vercel.json`](frontend/vercel.json) | Public hosting: the frontend on Vercel, `/api` proxied to the EC2 backend, see [`docs/VERCEL.md`](docs/VERCEL.md) |
 
 Deploy to a cluster by hand (ArgoCD does the same thing automatically, see [`docs/CICD.md`](docs/CICD.md)):
 
