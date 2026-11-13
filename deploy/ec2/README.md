@@ -1,5 +1,9 @@
 # Deploying StudAura to a single EC2 instance (Docker Compose)
 
+> Optional AWS/capstone path, preserved for switching back later. Do not provision new AWS
+> resources for the free setup. Follow [the Render migration](../../docs/RENDER.md).
+> Retaining these files does not keep or remove any live AWS resources.
+
 A small, cheap deployment that needs only one virtual machine. Supabase stays the database and
 authentication provider, so the instance runs just the application:
 
