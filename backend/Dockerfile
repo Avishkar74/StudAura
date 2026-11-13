@@ -17,7 +17,9 @@ COPY alembic.ini .
 RUN useradd --system --uid 10001 --no-create-home appuser
 USER 10001
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Render supplies PORT. Local Docker/Kubernetes continue to default to 8000.
+# exec forwards termination signals to uvicorn instead of leaving a shell as PID 1.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT:-8000}\""]
 
 # Dev image: adds test/lint tooling. Used by `docker compose` for `pytest`.
 FROM runtime AS dev
@@ -27,3 +29,6 @@ COPY tests/ tests/
 RUN pip install ".[dev]" && chown -R appuser /app
 USER 10001
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# Platforms such as Render build the final stage by default. Keep dev opt-in only.
+FROM runtime AS production
