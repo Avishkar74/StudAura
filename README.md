@@ -56,11 +56,27 @@ https://github.com/user-attachments/assets/d0814d22-392f-4f3c-900a-99d82651c746
 Sign-up and sign-in use Supabase Auth. The backend never trusts a user id from the client: it takes
 it from the verified token and filters every query by it.
 
+## Free hosting migration (prepared, not deployed)
+
+The proposed setup keeps the frontend on Vercel and PostgreSQL/Auth on the existing
+Supabase project, and moves the API to a Render Free web service. Review
+[`render.yaml`](render.yaml) and the [migration checklist](docs/RENDER.md) before creating
+any service. No live deployment or AWS teardown is performed by these repository changes.
+
+Render Free sleeps after 15 idle minutes and can take about a minute to wake. It has shared
+workspace usage limits and is for demos/hobby use, not an always-on production promise.
+Do not add a payment method or upgrade plans for this migration. Keep Supabase on its
+existing Free plan; confirm that the project is active before cutover.
+
+The frontend now expects `VITE_API_BASE_URL` to be the actual Render HTTPS origin, configured
+in Vercel at build time. The old hardcoded EC2 API rewrite is removed. Do not deploy this
+frontend change before the new API is ready and that variable is set.
+
 ## Architecture
 
 ### Runtime architecture
 
-How a request flows through the application, as deployed on Kubernetes (EKS):
+Historical capstone architecture, retained as evidence (not the proposed free runtime):
 
 ```mermaid
 flowchart LR
@@ -118,17 +134,19 @@ flowchart LR
     tf["Terraform"] -.->|"VPC, subnets,<br/>EKS, node group"| eks
 ```
 
-### Live hosting
-
-The public site at [stud-aura.vercel.app](https://stud-aura.vercel.app/) uses a lighter setup:
+### Proposed free hosting
 
 ```mermaid
 flowchart LR
-    user(["Browser"]) -->|"HTTPS"| vercel["Vercel<br/>static React app"]
-    vercel -->|"/api rewrite<br/>HTTP"| ec2["EC2 instance<br/>nginx + FastAPI<br/>Docker Compose"]
-    ec2 --> db[("PostgreSQL<br/>Supabase")]
+    user(["Browser"]) -->|"HTTPS"| vercel["Vercel static React app"]
+    user -->|"HTTPS API requests"| render["Render Free FastAPI"]
+    render --> db[("PostgreSQL on Supabase")]
     user -->|"sign in"| auth["Supabase Auth"]
 ```
+
+This is a migration plan, not a statement that Render is already running. The previous
+Vercel setup forwarded `/api` to EC2. The EKS/Terraform, Helm, ArgoCD and EC2 files remain intact as alternate deploy paths
+and capstone evidence. They are not needed for the proposed free setup.
 
 ### Stack
 
@@ -224,6 +242,9 @@ Security: images are scanned with Trivy before they are pushed and a fixable HIG
 commit SHAs; secrets are never in Git (`.gitignore` covers `.env`, `*.pem`, `*.tfvars`, state).
 
 ## Infrastructure and Kubernetes
+
+> Optional AWS/capstone path, preserved for switching back later. Do not run `terraform apply`
+> or the EC2 deploy scripts for the free setup. Use [docs/RENDER.md](docs/RENDER.md).
 
 | Path | What |
 |---|---|
@@ -386,10 +407,10 @@ by route and business events.
 
 ## Known issues and limitations
 
-* **HTTP only.** The Ingress serves plain HTTP on the load balancer's DNS name; there is no
+* **Historical EKS HTTP only.** The Ingress serves plain HTTP on the load balancer's DNS name; there is no
   domain or certificate. Supabase accepts an `http://` site URL, but a production setup would add
   cert-manager and a domain.
-* **Region latency.** The database is a Supabase project in Mumbai; the cluster runs in Sydney, so
+* **Historical EKS region latency.** The database is a Supabase project in Mumbai; the cluster runs in Sydney, so
   every query pays about 260 ms. The backend tolerates it (a longer readiness timeout and a pool
   warm-up) but pages are slower than they would be next to the database.
 * **Prometheus data is ephemeral.** No persistent volumes are configured, so metrics are lost
