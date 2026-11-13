@@ -1,5 +1,9 @@
 # Terraform: VPC and EKS on AWS
 
+> Optional AWS/capstone path, preserved for switching back later. Do not provision new AWS
+> resources for the free setup. Follow [the Render migration](../../docs/RENDER.md).
+> Retaining these files does not keep or remove any live AWS resources.
+
 Builds the network and the Kubernetes cluster StudAura runs on. Nothing here deploys the app; that
 is the Helm chart's job (M17).
 
