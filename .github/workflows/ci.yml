@@ -399,7 +399,8 @@ jobs:
     name: GitOps (point ArgoCD at this commit's images)
     # ArgoCD watches the `deploy` branch (argocd/application.yaml). It is main plus one file,
     # helm/studaura/image.yaml, naming the image tag to run. Main itself is never pushed to.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Legacy AWS deployment is opt-in; the free Render setup does not use ArgoCD.
+    if: vars.AWS_GITOPS_ENABLED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [publish]
     runs-on: ubuntu-latest
     timeout-minutes: 5
