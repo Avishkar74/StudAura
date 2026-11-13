@@ -1,0 +1,28 @@
+# Proposed hosting only. Creating a Blueprint starts its initial deploy; review first.
+# Frontend remains on Vercel; PostgreSQL and Auth remain on the existing Supabase project.
+services:
+  - type: web
+    name: studaura-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeployTrigger: 'off'
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ORIGINS
+        value: https://stud-aura.vercel.app
+      - key: SUPABASE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: YOUTUBE_DATA_API_KEY
+        sync: false
+# For a legacy HS256 Supabase project only, add SUPABASE_JWT_SECRET in the dashboard.
+# No database resource, disk, paid plan, deploy hook, or migration command is created here.
